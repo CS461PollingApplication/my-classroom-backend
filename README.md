@@ -55,3 +55,5 @@ The application is configured to use Courier notification infastructure to messa
 The process should yield a bearer token in the HTTPS request Courier generates. Copy this token, and paste it in the application environment as `COURIER_AUTH_TOKEN`. That's it! You should be able to interact with the configured emailer through Courier.
 
 It's worth noting that the application is only configured for email use through Courier, but Courier supports a variety of modern notification methods.
+
+#elayne test
