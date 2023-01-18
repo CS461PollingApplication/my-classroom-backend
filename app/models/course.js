@@ -19,19 +19,24 @@ module.exports = (sequelize, Database) => {
                 },
                 notEmpty: {
                     msg: "Course name cannot be empty"
+                },
+                len: {
+                    args: [0, 50],
+                    msg: 'Course name must be less than or equal to 50 characters'
                 }
             },
-            max: {
-                args: [50],
-                msg: "Course name must be less than 50 characters"
-            }
         },
         description: {
             type: DataTypes.TEXT,
             allowNull: true,
-            max: {
-                args: [500],
-                msg: "Course description must be less than 500 characters"
+            validate: {
+                notEmpty: {
+                    msg: "Course description, if it exists, cannot be empty"
+                },
+                len: {
+                    args: [0, 500],
+                    msg: 'Course description must be less than or equal to 500 characters'
+                }
             }
         },
         published: {
@@ -39,6 +44,9 @@ module.exports = (sequelize, Database) => {
             allowNull: false,
             defaultValue: false
         }
+    },
+    {
+        timestamps: true
     })
 
     return Course

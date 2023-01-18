@@ -10,6 +10,14 @@ module.exports = (sequelize, Database) => {
             autoIncrement: true,
             primaryKey: true
         },
+        // UNCOMMENT: 
+        // courseId: {
+        //     type: DataTypes.INTEGER,
+        //     references: {
+        //         model: Course,
+        //         key: 'id'
+        //     }
+        // },
         number: {
             type: DataTypes.INTEGER,
             allowNull: false,            
@@ -19,10 +27,19 @@ module.exports = (sequelize, Database) => {
         indexes: [
             {
                 unique: true,
-                fields: [/*'courseId'*/, 'number']
+                fields: ['courseId', 'number']
             }
         ]
-    })
+    },
+    {
+        timestamps: true
+    }
+    )
+
+    // Course.hasMany(Section, {
+    //     foreignKey: 'courseId'
+    // });
+    // Section.belongsTo(Course);
 
     return Course
 }
