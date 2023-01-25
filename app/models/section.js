@@ -1,4 +1,4 @@
-'use script'
+'use strict'
 
 const { DataTypes } = require("sequelize")
 
@@ -41,5 +41,5 @@ module.exports = (sequelize, Database) => {
     // });
     // Section.belongsTo(Course);
 
-    return Course
+    return Section
 }
