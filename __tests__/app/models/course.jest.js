@@ -15,7 +15,7 @@ describe("Course model", () => {
                 name: 'PH201: Introduction to Physics',
                 description: 'An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more.'
             })
-            expect(course.name).toEqual("PH201")
+            expect(course.name).toEqual("PH201: Introduction to Physics")
             expect(course.description).toEqual("An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more.")
             expect(course.published).toBeFalsy()
         })
@@ -26,7 +26,7 @@ describe("Course model", () => {
                 description: 'An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more.',
                 published: true
             })
-            expect(course.name).toEqual("PH201")
+            expect(course.name).toEqual("PH201: Introduction to Physics")
             expect(course.description).toEqual("An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more.")
             expect(course.published).toBeTruthy()
         })
@@ -55,8 +55,8 @@ describe("Course model", () => {
             const course = await db.Course.create({
                 name: 'PH201: Introduction to Physics'
             })
-            expect(course.name).toEqual("PH201")
-            expect(course.description).toBeNull()
+            expect(course.name).toEqual("PH201: Introduction to Physics")
+            expect(course.description).toBeUndefined()
             expect(course.published).toBeFalsy()
         })
 
@@ -64,14 +64,14 @@ describe("Course model", () => {
             await expect(db.Course.create({
                 name: 'PH201: Introduction to Physics',
                 description: 'An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more. This course will involve a lot of hard work and dedication to complete.An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more. This course will involve a lot of hard work and dedication to complete.An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more. This course will involve a lot of hard work and dedication to complete.An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more. This course will involve a lot of hard work and dedication to complete.'
-            })).rejects.toThrow("Validation error: Course description cannot be longer than 500 characters")
+            })).rejects.toThrow("Validation error: Course description must be less than or equal to 500 characters")
         })
     
         it ("should reject a name over 50 characters", async () => {
             await expect(db.Course.create({
                 name: 'PH201: Introduction to Physics with labs and lectures that happen for 4 days of the week',
                 description: 'An introduction to physics concepts, such as kinematics, Newton\'s Laws, and more.'
-            })).rejects.toThrow("Validation error: Course name cannot be longer than 50 characters")
+            })).rejects.toThrow("Validation error: Course name must be less than or equal to 50 characters")
         })
     })
 

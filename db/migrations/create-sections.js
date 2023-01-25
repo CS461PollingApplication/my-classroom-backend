@@ -27,7 +27,7 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
-    });
+    }).then(() => queryInterface.addIndex('section-index', ['number']));
   },
 
   async down (queryInterface, Sequelize) {

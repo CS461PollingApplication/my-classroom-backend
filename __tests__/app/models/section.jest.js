@@ -12,15 +12,21 @@ describe("Section model", () => {
     describe("Section.create", () => {
         it ("should create a valid section record with default values", async () => {
             const section = await db.Section.create({
-                number: 015
+                number: 15
             })
-            expect(section.number).toEqual(015)
+            expect(section.number).toEqual(15)
+        })
+
+        it ("should reject a section with repeated section number", async () => {
+            await expect(db.Section.create({
+                number: 15
+            })).rejects.toThrow("Validation error")
         })
     
         it ("should reject a null section number", async () => {
             await expect(db.Section.create({
                 
-            })).rejects.toThrow("notNull Violation: Section number required")
+            })).rejects.toThrow("notNull Violation: Section.number cannot be null")
         })
     
     })
@@ -29,7 +35,7 @@ describe("Section model", () => {
 
         beforeEach(async() => {
             section = await db.Section.create({
-                number: 015
+                number: 14
             })
         })
 
