@@ -66,6 +66,7 @@ describe('Lecture model', () => {
         })
         // TODO: write test that checks if order gets correctly filled if not passed in
         // (should be 1 increment from current order in current course)
+        // beforeCreate needs to be uncommented in lecture.js for this
     })
 
     describe('Lecture.update', () => {
