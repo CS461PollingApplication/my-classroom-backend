@@ -18,7 +18,7 @@ module.exports = (sequelize, DataTypes) => {
         //         model: Course,
         //         key: 'id'
         //     },
-        //     unique: {    // compound unique constraint with 'courseId'
+        //     unique: {    // compound unique constraint with 'order'
         //         args: 'course_order_index',
         //         msg: 'There already exists a lecture with this order number in this course'
         //     }        
@@ -47,9 +47,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         description: {
             type: DataTypes.STRING(250),    // max length of 250
-            len: {
-                args: [0, 250],
-                msg: 'Description must be less than 250 characters'
+            validate: {
+                len: {
+                    args: [0, 250],
+                    msg: 'Description must be less than 250 characters'
+                }
             }
         },
     },
