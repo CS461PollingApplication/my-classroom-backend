@@ -14,7 +14,25 @@ module.exports = {
       },
       number: {
         type: Sequelize.INTEGER,
+        allowNull: false
+      },
+      joinCode: {
+        type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
+        validate: {
+          isAlphanumeric: true,
+          notNull: {
+              msg: "Section join code required"
+          },
+          notEmpty: {
+              msg: "section join code cannot be empty"
+          },
+          len: {
+              args: [6, 6],
+              msg: 'Section join code must be 6 characters'
+          }
+        }
       },
       // these columns should be standardized across all future tables created
       createdAt: {
@@ -27,7 +45,7 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
-    }).then(() => queryInterface.addIndex('section-index', ['number']));
+    })//.then(() => queryInterface.addIndex('Sections', ['number']));
   },
 
   async down (queryInterface, Sequelize) {
