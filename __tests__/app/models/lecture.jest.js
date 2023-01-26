@@ -22,7 +22,6 @@ describe('Lecture model', () => {
             expect(lecture.title).toEqual('question set 1')
             expect(lecture.order).toEqual(1)
             expect(lecture.description).toEqual('intro q')
-            expect(lecture.published).toBeFalsy()
             // UNCOMMENT:
             // expect(lecture.courseId).toEqual(1)
         })
@@ -65,6 +64,8 @@ describe('Lecture model', () => {
                 // courseId: 1
             })).rejects.toThrow(UniqueConstraintError)
         })
+        // TODO: write test that checks if order gets correctly filled if not passed in
+        // (should be 1 increment from current order in current course)
     })
 
     describe('Lecture.update', () => {
@@ -97,13 +98,6 @@ describe('Lecture model', () => {
             await expect(lecture.save()).resolves.toBeTruthy()
             await lecture.reload()
             expect(lecture.description).toEqual('new description')
-        })
-
-        it('should update lecture published status', async () => {
-            await lecture.update({published: false})
-            await expect(lecture.save()).resolves.toBeTruthy()
-            await lecture.reload()
-            expect(lecture.published).toBeFalsy()
         })
 
         afterEach(async () => {

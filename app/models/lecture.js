@@ -52,10 +52,25 @@ module.exports = (sequelize, DataTypes) => {
                 msg: 'Description must be less than 250 characters'
             }
         },
-        published: {
-            type: DataTypes.BOOLEAN,
-            allowNull: false,
-            defaultValue: false
+    },
+    {
+        hooks: {
+            beforeCreate: async (lecture) => {
+                if (!lecture.order === null) {  // if lecture order isn't passed in
+                    const curr_max_order = await Lecture.max('order', {     // get the current max order number for this course
+                        where: {
+                            courseId: lecture.courseId
+                        }
+                    })
+    
+                    if (curr_max_order === null) {  // if no order was found (first entry for this course)
+                        lecture.order = 1;
+                    }
+                    else {  // if there is an entry for this course, get appropriate order number
+                        lecture.order = curr_max_order + 1
+                    }
+                }
+            }
         }
     })
 
