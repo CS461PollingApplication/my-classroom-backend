@@ -51,6 +51,9 @@ module.exports = (sequelize, DataTypes) => {
         Course.hasMany(models.Enrollment, {
             foreignKey: 'courseId'
         })
+        Course.hasMany(models.Section, {
+            foreignKey: 'courseId'
+        })
     }
 
     return Course

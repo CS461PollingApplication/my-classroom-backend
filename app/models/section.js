@@ -8,17 +8,22 @@ module.exports = (sequelize, DataTypes) => {
             autoIncrement: true,
             primaryKey: true
         },
-        // UNCOMMENT: 
-        // courseId: {
-        //     type: DataTypes.INTEGER,
-        //     references: {
-        //         model: Course,
-        //         key: 'id'
-        //     }
-        // },
+        courseId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'Courses',
+                key: 'id'
+            },
+            validate: {
+                notNull: {
+                    msg: "A section must belong to a course"
+                }
+            }
+        },
         number: {
             type: DataTypes.INTEGER,
-            allowNull: false,            
+            allowNull: false,
         },
         joinCode: {
             type: DataTypes.STRING,
@@ -40,13 +45,12 @@ module.exports = (sequelize, DataTypes) => {
         },
     },
     {
-        // UNCOMMENT: when course relationship has been made
-        // indexes: [
-        //     {
-        //         unique: true,
-        //         fields: ['number'] //courseId foreign key will be part of this too
-        //     }
-        // ],
+        indexes: [
+            {
+                unique: true,
+                fields: ['number', 'courseId']
+            }
+        ],
         timestamps: true
     })
 
@@ -54,6 +58,7 @@ module.exports = (sequelize, DataTypes) => {
         Section.hasMany(models.Enrollment, {
             foreignKey: 'sectionId'
         })
+        Section.belongsTo(models.Course)
     }
 
     return Section

@@ -21,10 +21,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         courseId: {
             type: DataTypes.INTEGER,
-            // references: {
-            //     model: 'Courses',
-            //     key: 'id'
-            // },
+            references: {
+                model: 'Courses',
+                key: 'id'
+            },
             allowNull: true,
             validate: {
                 roleValidation(courseId) {
@@ -50,10 +50,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         userId: {
             type: DataTypes.INTEGER,
-            // references: {
-            //     model: 'Users',
-            //     key: 'id'
-            // },
+            references: {
+                model: 'Users',
+                key: 'id'
+            },
             allowNull: false,
             validate: {
                 notNull: {
@@ -63,14 +63,13 @@ module.exports = (sequelize, DataTypes) => {
         },
         sectionId: {
             type: DataTypes.INTEGER,
-            // references: {
-            //     model: 'Sections',
-            //     key: 'id'
-            // },
+            references: {
+                model: 'Sections',
+                key: 'id'
+            },
             allowNull: true,
             validate: {
                 roleValidation(sectionId) {
-                    console.log(`sectionId: ${sectionId}`)
                     if (sectionId == null || sectionId == undefined) {
                         // a non-teacher must have a section
                         if (!(this.role === 'teacher')) {
@@ -97,17 +96,17 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true
     })
 
-    // Enrollment.associate = function(models) {
-    //     Enrollment.belongsTo(models.Course, {
-    //         foreignKey: 'courseId'
-    //     })
-    //     Enrollment.belongsTo(models.User, {
-    //         foreignKey: 'userId'
-    //     })
-    //     Enrollment.belongsTo(models.Section, {
-    //         foreignKey: 'sectionId'
-    //     })
-    // }
+    Enrollment.associate = function(models) {
+        Enrollment.belongsTo(models.Course, {
+            foreignKey: 'courseId'
+        })
+        Enrollment.belongsTo(models.User, {
+            foreignKey: 'userId'
+        })
+        Enrollment.belongsTo(models.Section, {
+            foreignKey: 'sectionId'
+        })
+    }
 
     return Enrollment
 }

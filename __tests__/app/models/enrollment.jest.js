@@ -19,7 +19,8 @@ describe("Enrollment model", () => {
         })
         section = await db.Section.create({
             number: 16,
-            joinCode: "1yhs19" // some alphanumeric value
+            joinCode: "1yhs19", // some alphanumeric value
+            courseId: course.id
         })
     })
 
