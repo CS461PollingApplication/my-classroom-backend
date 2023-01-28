@@ -48,7 +48,8 @@ module.exports = (sequelize, DataTypes) => {
         indexes: [
             {
                 unique: true,
-                fields: ['number', 'courseId']
+                fields: ['courseId', 'number'],
+                name: 'custom_unique_section_constraint'
             }
         ],
         timestamps: true

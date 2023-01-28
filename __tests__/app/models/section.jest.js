@@ -25,7 +25,7 @@ describe("Section model", () => {
             await section.destroy()
         })
 
-        it ("should reject a section with repeated section number", async () => {
+        it ("should reject a section with repeated section number in the same course", async () => {
             const section = await db.Section.create({
                 number: 15,
                 joinCode: "34Rt56",
