@@ -32,6 +32,8 @@ describe("Enrollment model", () => {
                 userId: user.id
             })
             expect(enrollment.role).toEqual("student")
+            expect(enrollment.sectionId).toEqual(section.id)
+            expect(enrollment.userId).toEqual(user.id)
             await enrollment.destroy()
         })
 
@@ -42,6 +44,8 @@ describe("Enrollment model", () => {
                 userId: user.id
             })
             expect(enrollment.role).toEqual("teacher")
+            expect(enrollment.courseId).toEqual(course.id)
+            expect(enrollment.userId).toEqual(user.id)
             await enrollment.destroy()
         })
 
@@ -52,6 +56,8 @@ describe("Enrollment model", () => {
                 userId: user.id
             })
             expect(enrollment.role).toEqual("ta")
+            expect(enrollment.sectionId).toEqual(section.id)
+            expect(enrollment.userId).toEqual(user.id)
             await enrollment.destroy()
         })
 
@@ -113,6 +119,20 @@ describe("Enrollment model", () => {
                 courseId: course.id,
                 userId: user.id
             })).rejects.toThrow("Validation error: Enrollment cannot be in a section and a course")
+        })
+
+        it ("should reject a duplicate enrollment", async() => {
+            const enrollment = await db.Enrollment.create({
+                role: "student",
+                sectionId: section.id,
+                userId: user.id
+            })
+            await expect(db.Enrollment.create({
+                role: "student",
+                sectionId: section.id,
+                userId: user.id
+            })).rejects.toThrow("Validation error")
+            await enrollment.destroy()
         })
     
     })

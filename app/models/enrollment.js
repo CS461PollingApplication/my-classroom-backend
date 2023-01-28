@@ -90,7 +90,14 @@ module.exports = (sequelize, DataTypes) => {
         indexes: [
             // avoids duplicate enrollments
             {
-                fields: ['userId', 'courseId', 'sectionId']
+                unique: true,
+                fields: ['userId', 'courseId'],
+                name: 'custom_unique_teacher_constraint'
+            },
+            {
+                unique: true,
+                fields: ['userId', 'sectionId'],
+                name: 'custom_unique_student_constraint'
             }
         ],
         timestamps: true
