@@ -21,14 +21,14 @@ module.exports = (sequelize, DataTypes) => {
         //},
         expires: {
             type: DataTypes.DATE(6),
-            defaultValue: moment().add(4, 'hours').utc().format("YYYY-MM-DD HH:mm:ss"),
+            defaultValue: moment().add(4, 'H').utc().format("YYYY-MM-DD HH:mm:ss"),
             allowNull: false
         }
     })
 
     //Sends true if the current session is expired, false if not
-    Session.protoype.checkIfExpired = function (expires){
-        return moment().utc().format("YYYY-MM-DD HH:mm:ss").IsAfter(expires);
+    Session.prototype.checkIfExpired = function (){
+        return moment().utc().isAfter(moment(this.expires));
     }
 
     return Session;
