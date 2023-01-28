@@ -1,13 +1,6 @@
 const db = require('../../../app/models/index')
-const moment = require('moment')
 
 describe("Section model", () => {
-
-    let section //declare section so it can be accessed in all the following tests, where necessary
-
-    beforeAll(async() => {
-        await db.sequelize.sync() // connect to the database
-    })
 
     describe("Section.create", () => {
         it ("should create a valid section record with default values", async () => {
@@ -17,20 +10,32 @@ describe("Section model", () => {
             })
             expect(section.number).toEqual(15)
             expect(section.joinCode).toEqual("23XyZ7")
+            await section.destroy()
         })
 
-        it ("should reject a section with repeated section number", async () => {
-            await expect(db.Section.create({
-                number: 15,
-                joinCode: "34Rt56"
-            })).rejects.toThrow("Validation error")
-        })
+        // UNCOMMENT: when the course relationship has been set up
+        // it ("should reject a section with repeated section number", async () => {
+        //     const section = await db.Section.create({
+        //         number: 15,
+        //         joinCode: "34Rt56"
+        //     })
+        //     await expect(db.Section.create({
+        //         number: 15,
+        //         joinCode: "34Rt57"
+        //     })).rejects.toThrow("Validation error")
+        //     await section.destroy()
+        // })
 
         it ("should reject a section with repeated join code", async () => {
+            const section = await db.Section.create({
+                number: 11,
+                joinCode: "23Xyp7"
+            })
             await expect(db.Section.create({
                 number: 10,
-                joinCode: "23XyZ7"
+                joinCode: "23Xyp7"
             })).rejects.toThrow("Validation error")
+            await section.destroy()
         })
     
         it ("should reject a null section number", async () => {
@@ -70,6 +75,8 @@ describe("Section model", () => {
 
     describe("Section.update", () => {
 
+        let section
+
         beforeEach(async() => {
             section = await db.Section.create({
                 number: 20,
@@ -94,13 +101,5 @@ describe("Section model", () => {
         afterEach(async () => {
             await section.destroy()
         })
-    })
-
-    afterAll(async () => {
-        await db.Section.destroy({ // delete all Section records to flush out the database after the tests have run
-            where: {},
-            truncate: true
-        })
-        await db.sequelize.close()
     })
 })

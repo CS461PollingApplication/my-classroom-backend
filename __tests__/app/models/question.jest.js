@@ -65,6 +65,7 @@ describe("Question model", () => {
                         expect(question.answers[i]).toEqual(true)
                     }
                 }
+                await question.destroy()
             })
 
             it ("should invalidate content because no options were provided", async() => {
@@ -251,6 +252,7 @@ describe("Question model", () => {
                         expect(question.answers[i]).toEqual(true)
                     }
                 }
+                await question.destroy()
             })
 
             it ("should invalidate content because no options were provided", async() => {
@@ -452,6 +454,10 @@ describe("Question model", () => {
                 }
                 expect(question.accuracyScore(submission)).toEqual(0.0)
             })
+
+            afterAll(async () => {
+                await question.destroy()
+            })
         })
 
         describe("type: multiple answer", () => {
@@ -574,13 +580,10 @@ describe("Question model", () => {
                 }
                 expect(question.accuracyScore(submission)).toEqual(0.0)
             })
-        })
-    })
 
-    afterAll(async () => {
-        await db.Question.destroy({ // delete all User records to flush out the database after the tests have run
-            where: {},
-            truncate: true
+            afterAll(async () => {
+                await question.destroy()
+            })
         })
     })
 })

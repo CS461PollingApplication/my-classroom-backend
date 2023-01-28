@@ -5,10 +5,6 @@ const db = require('../../../app/models/index')
 describe('Lecture model', () => {
     let lecture
 
-    beforeAll(async() => {
-        await db.sequelize.sync() // connect to the database
-    })
-
     describe('Lecture.create', () => {
         it('should create lecture with provided/default values', async () => {
             const lecture = await db.Lecture.create({
@@ -24,6 +20,7 @@ describe('Lecture model', () => {
             expect(lecture.description).toEqual('intro q')
             // UNCOMMENT:
             // expect(lecture.courseId).toEqual(1)
+            await lecture.destroy()
         })
 
         it('should reject a lecture with missing title', async () => {
@@ -55,15 +52,16 @@ describe('Lecture model', () => {
             })).rejects.toThrow('Validation error: Title must be between 1 and 50 characters')
         })
 
-        it('should reject a new entry with matching order AND courseId', async () => {
-            await expect(db.Lecture.create({
-                title: 'new lec',
-                order: 1,
-                description: 'new intro q',
-                // UNCOMMENT: 
-                // courseId: 1
-            })).rejects.toThrow(UniqueConstraintError)
-        })
+        // UNCOMMENT: when relationship has been created
+        // it('should reject a new entry with matching order AND courseId', async () => {
+        //     await expect(db.Lecture.create({
+        //         title: 'new lec',
+        //         order: 1,
+        //         description: 'new intro q',
+        //         // UNCOMMENT: 
+        //         // courseId: 1
+        //     })).rejects.toThrow(UniqueConstraintError)
+        // })
         // TODO: write test that checks if order gets correctly filled if not passed in
         // (should be 1 increment from current order in current course)
         // beforeCreate needs to be uncommented in lecture.js for this
@@ -104,14 +102,5 @@ describe('Lecture model', () => {
         afterEach(async () => {
             await lecture.destroy()
         })
-    })
-
-    afterAll(async () => {
-        // remove all lecture entries created during the test
-        await db.Lecture.destroy({
-            where: {},
-            truncate: true
-        })
-        await db.sequelize.close()
     })
 })

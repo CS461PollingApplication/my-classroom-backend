@@ -5,14 +5,14 @@ module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.createTable('Lecture', {
       id: {
-        type: DataTypes.INTEGER,
+        type: Sequelize.INTEGER,
         allowNull: false,
         autoIncrement: true,
         primaryKey: true
       },
       // UNCOMMENT: 
       // courseId: {
-      //     type: DataTypes.INTEGER,
+      //     type: Sequelize.INTEGER,
       //     references: {
       //         model: Course,
       //         key: 'id'
@@ -22,19 +22,16 @@ module.exports = {
       //     }        
       // },
       title: {
-          type: DataTypes.STRING(50), // max length of 50
+          type: Sequelize.STRING(50), // max length of 50
           allowNull: false
       },
       // the order of current lecture within a course
       order: {
-          type: DataTypes.INTEGER,
+          type: Sequelize.INTEGER,
           allowNull: false,
-          unique: {    // compound unique constraint with 'courseId'
-              args: 'course_order_index'
-          }
       },
       description: {
-        type: DataTypes.STRING(250)    // max length of 250
+        type: Sequelize.STRING(250)    // max length of 250
       },
       createdAt: {
         allowNull: false,

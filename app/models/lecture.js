@@ -40,10 +40,6 @@ module.exports = (sequelize, DataTypes) => {
         order: {
             type: DataTypes.INTEGER,
             allowNull: false,
-            unique: {    // compound unique constraint with 'courseId'
-                args: 'course_order_index',
-                msg: 'There already exists a lecture with this order number in this course'
-            }
         },
         description: {
             type: DataTypes.STRING(250),    // max length of 250
@@ -75,6 +71,7 @@ module.exports = (sequelize, DataTypes) => {
         //         }
         //     }
         // }
+        timestamps: true
     })
 
     return Lecture;

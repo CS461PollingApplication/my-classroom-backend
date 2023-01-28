@@ -19,6 +19,7 @@ describe("Response model", () => {
             expect(resp.submission['1']).toEqual(true)
             expect(resp.submission['2']).toEqual(false)
             expect(resp.submission['3']).toEqual(false)
+            await resp.destroy()
         })
 
         it ("should default to an empty submission", async() => {
@@ -28,6 +29,7 @@ describe("Response model", () => {
             resp = await resp.reload()
             expect(resp.score).toEqual(0.96)
             expect(resp.submission).toEqual({})
+            await resp.destroy()
         })
 
         it ("should invalidate because score is too high", async () => {
@@ -65,12 +67,4 @@ describe("Response model", () => {
             })).rejects.toThrow("notNull Violation: a response must have a score")
         })
     })
-
-    afterAll(async() => {
-        await db.Response.destroy({ // delete all Response records to flush out the database after the tests have run
-            where: {},
-            truncate: true
-        })
-    })
-
 })

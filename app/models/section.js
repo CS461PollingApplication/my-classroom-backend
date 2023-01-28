@@ -1,8 +1,6 @@
 'use strict'
 
-const { DataTypes } = require("sequelize")
-
-module.exports = (sequelize, Database) => {
+module.exports = (sequelize, DataTypes) => {
     const Section = sequelize.define('Section', {
         id: {
             type: DataTypes.INTEGER,
@@ -42,22 +40,21 @@ module.exports = (sequelize, Database) => {
         },
     },
     {
-        indexes: [
-            {
-                unique: true,
-                fields: ['number'] //courseId foreign key will be part of this too
-            }
-        ]
-    },
-    {
+        // UNCOMMENT: when course relationship has been made
+        // indexes: [
+        //     {
+        //         unique: true,
+        //         fields: ['number'] //courseId foreign key will be part of this too
+        //     }
+        // ],
         timestamps: true
-    }
-    )
+    })
 
-    // Course.hasMany(Section, {
-    //     foreignKey: 'courseId'
-    // });
-    // Section.belongsTo(Course);
+    Section.associate = function(models) {
+        Section.hasMany(models.Enrollment, {
+            foreignKey: 'sectionId'
+        })
+    }
 
     return Section
 }
