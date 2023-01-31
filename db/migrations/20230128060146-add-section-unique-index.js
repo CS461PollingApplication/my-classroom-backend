@@ -13,7 +13,7 @@ module.exports = {
 
   async down (queryInterface, Sequelize) {
     await queryInterface.sequelize.query(
-      'ALTER TABLE Sections ADD UNIQUE KEY `Sections_courseId_foreign_idx`(`courseId`);'
+      'ALTER TABLE Sections ADD KEY `Sections_courseId_foreign_idx`(`courseId`);'
     )
     await queryInterface.removeConstraint('Sections', 'custom_unique_section_constraint')
   }

@@ -19,7 +19,7 @@ module.exports = {
 
   async down (queryInterface, Sequelize) {
     await queryInterface.sequelize.query(
-      'ALTER TABLE Enrollments ADD UNIQUE `Enrollments_userId_foreign_idx`(`userId`);'
+      'ALTER TABLE Enrollments ADD KEY `Enrollments_userId_foreign_idx`(`userId`);'
     )
     await queryInterface.removeConstraint(`Enrollments`, 'custom_unique_teacher_constraint')
     await queryInterface.removeConstraint('Enrollments', 'custom_unique_student_constraint')

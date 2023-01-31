@@ -11,18 +11,19 @@ module.exports = (sequelize, DataTypes) => {
             autoIncrement: true,
             primaryKey: true
         },
-        // UNCOMMENT: 
-        // courseId: {
-        //     type: DataTypes.INTEGER,
-        //     references: {
-        //         model: Course,
-        //         key: 'id'
-        //     },
-        //     unique: {    // compound unique constraint with 'order'
-        //         args: 'course_order_index',
-        //         msg: 'There already exists a lecture with this order number in this course'
-        //     }        
-        // },
+        courseId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'Courses',
+                key: 'id'
+            },
+            validate: {
+                notNull: {
+                    msg: "Lecture must have a course"
+                }
+            }
+        },
         title: {
             type: DataTypes.STRING(50), // max length of 50
             allowNull: false,
@@ -38,8 +39,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         // the order of current lecture within a course
         order: {
-            type: DataTypes.INTEGER,
-            allowNull: false,
+            type: DataTypes.INTEGER
         },
         description: {
             type: DataTypes.STRING(250),    // max length of 250
@@ -52,31 +52,39 @@ module.exports = (sequelize, DataTypes) => {
         },
     },
     {
-        // UNCOMMENT:
-        // hooks: {
-        //     beforeCreate: async (lecture) => {
-        //         if (!lecture.order === null) {  // if lecture order isn't passed in
-        //             const curr_max_order = await Lecture.max('order', {     // get the current max order number for this course
-        //                 where: {
-        //                     courseId: lecture.courseId
-        //                 }
-        //             })
+        hooks: {
+            beforeCreate: async (lecture) => {
+                if (lecture.order == null) {  // if lecture order isn't passed in
+                    const curr_max_order = await Lecture.max('order', {     // get the current max order number for this course
+                        where: {
+                            courseId: lecture.courseId
+                        }
+                    })
+
+                    console.log(curr_max_order)
     
-        //             if (curr_max_order === null) {  // if no order was found (first entry for this course)
-        //                 lecture.order = 1;
-        //             }
-        //             else {  // if there is an entry for this course, get appropriate order number
-        //                 lecture.order = curr_max_order + 1
-        //             }
-        //         }
-        //     }
-        // }
+                    if (curr_max_order == null) {  // if no order was found (first entry for this course)
+                        lecture.order = 0;
+                    }
+                    else {  // if there is an entry for this course, get appropriate order number
+                        lecture.order = curr_max_order + 1
+                    }
+                }
+            }
+        },
+        indexes: [
+            {
+                name: 'custom_unique_lecture_constraint',
+                unique: true,
+                fields: ['order', 'courseId']
+            }
+        ],
         timestamps: true
     })
 
+    Lecture.associate = (models) => {
+        Lecture.belongsTo(models.Course)
+    }
+
     return Lecture;
 }
-
-// one-to-many relationship with lecture
-// UNCOMMENT:
-// Lecture.belongsTo(Course);

@@ -3,24 +3,13 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('Lecture', {
+    await queryInterface.createTable('Lectures', {
       id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         autoIncrement: true,
         primaryKey: true
       },
-      // UNCOMMENT: 
-      // courseId: {
-      //     type: Sequelize.INTEGER,
-      //     references: {
-      //         model: Course,
-      //         key: 'id'
-      //     },
-      //     unique: {    // compound unique constraint with 'order'
-      //         args: 'course_order_index',
-      //     }        
-      // },
       title: {
           type: Sequelize.STRING(50), // max length of 50
           allowNull: false
