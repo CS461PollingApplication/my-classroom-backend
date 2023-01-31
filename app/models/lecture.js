@@ -38,6 +38,8 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         // the order of current lecture within a course
+        //      the order column is non-nullable in the database, but we do not want sequelize to perform notNull validation
+        //      because the beforeCreate action defined below will auto-set the order within the scope of the course
         order: {
             type: DataTypes.INTEGER
         },
