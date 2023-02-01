@@ -55,12 +55,5 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true
     })
 
-    Section.associate = function(models) {
-        Section.hasMany(models.Enrollment, {
-            foreignKey: 'sectionId'
-        })
-        Section.belongsTo(models.Course)
-    }
-
     return Section
 }

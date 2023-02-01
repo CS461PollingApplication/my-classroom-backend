@@ -79,12 +79,5 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true
     })
 
-    Lecture.associate = (models) => {
-        Lecture.belongsTo(models.Course)
-        Lecture.hasMany(models.QuestionInLecture, {
-            foreignKey: 'lectureId'
-        })
-    }
-
     return Lecture;
 }

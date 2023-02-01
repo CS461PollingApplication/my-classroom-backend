@@ -134,13 +134,6 @@ module.exports = (sequelize, DataTypes) => {
         }
     */
 
-    Question.associate = (models) => {
-        Question.belongsTo(models.Course)
-        Question.hasMany(models.QuestionInLecture, {
-            foreignKey: 'questionId'
-        })
-    }
-
     Question.prototype.accuracyScore = function (submission) {
         let grade = 0.0
         const answers = submission.answers

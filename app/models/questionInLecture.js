@@ -73,13 +73,5 @@ module.exports = (sequelize, DataTypes) => {
         }
     })
 
-    QuestionInLecture.assoociate = (models) => {
-        QuestionInLecture.belongsTo(models.Lecture)
-        QuestionInLecture.belongsTo(models.Question)
-        QuestionInLecture.hasMany(models.Response, {
-            foreignKey: 'questionInLectureId'
-        })
-    }
-
     return QuestionInLecture
 }
