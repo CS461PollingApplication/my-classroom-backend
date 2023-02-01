@@ -1,8 +1,5 @@
 'use strict'
 
-// UNCOMMENT:
-// const Course = require('./course')
-
 module.exports = (sequelize, DataTypes) => {
     const Lecture = sequelize.define('Lecture', {
         id: {

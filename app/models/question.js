@@ -11,6 +11,19 @@ module.exports = (sequelize, DataTypes) => {
             autoIncrement: true,
             primaryKey: true
         },
+        courseId: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: 'Courses',
+                key: 'id'
+            },
+            validate: {
+                notNull: {
+                    msg: "Question must have a course"
+                }
+            }
+        },
         type: { // multiple choice only for now
             type: DataTypes.STRING,
             allowNull: false,
@@ -120,6 +133,10 @@ module.exports = (sequelize, DataTypes) => {
             }
         }
     */
+
+    Question.associate = (models) => {
+        Question.belongsTo(models.Course)
+    }
 
     Question.prototype.accuracyScore = function (submission) {
         let grade = 0.0
