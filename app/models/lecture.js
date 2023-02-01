@@ -59,8 +59,6 @@ module.exports = (sequelize, DataTypes) => {
                             courseId: lecture.courseId
                         }
                     })
-
-                    console.log(curr_max_order)
     
                     if (curr_max_order == null) {  // if no order was found (first entry for this course)
                         lecture.order = 0;
@@ -83,6 +81,9 @@ module.exports = (sequelize, DataTypes) => {
 
     Lecture.associate = (models) => {
         Lecture.belongsTo(models.Course)
+        Lecture.hasMany(models.QuestionInLecture, {
+            foreignKey: 'lectureId'
+        })
     }
 
     return Lecture;

@@ -99,18 +99,12 @@ describe('Lecture model', () => {
 
     describe('Lecture.update', () => {
         beforeEach(async() => {
-            try {
-                lecture = await db.Lecture.create({
-                    title: 'question set 1',
-                    order: 5,
-                    description: 'intro q',
-                    courseId: course.id
-                })
-            }
-            catch (e) {
-                console.log(e)
-            }
-            
+            lecture = await db.Lecture.create({
+                title: 'question set 1',
+                order: 5,
+                description: 'intro q',
+                courseId: course.id
+            })
         })
 
         it('should update lecture title', async () => {
