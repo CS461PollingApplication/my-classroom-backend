@@ -3,7 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up (queryInterface, Sequelize) {
-    await queryInterface.createTable('Question_in_lectures', {
+    await queryInterface.createTable('QuestionInLectures', {
       id: {
         type: Sequelize.INTEGER,
         allowNull: false,
@@ -17,6 +17,7 @@ module.exports = {
               model: 'Questions',
               key: 'id'
           },
+          onDelete: 'CASCADE'
       },
       lectureId: {
           type: Sequelize.INTEGER,
@@ -25,6 +26,7 @@ module.exports = {
               model: 'Lectures',
               key: 'id'
           },
+          onDelete: 'CASCADE'
       },
       order: {
           type: Sequelize.INTEGER,
@@ -46,7 +48,7 @@ module.exports = {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     })
-    await queryInterface.addConstraint('Question_in_lectures', {
+    await queryInterface.addConstraint('QuestionInLectures', {
       fields: ['lectureId', 'order'],
       type: 'unique',
       name: 'custom_unique_question_in_lectures_order_constraint',
@@ -55,6 +57,6 @@ module.exports = {
   },
 
   async down (queryInterface, Sequelize) {
-    await queryInterface.dropTable('Question_in_lectures')
+    await queryInterface.dropTable('QuestionInLectures')
   }
 };
