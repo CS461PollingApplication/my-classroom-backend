@@ -14,7 +14,7 @@ exports.generateAuthToken = generateAuthToken
 function requireAuthentication(req, res, next) {
     const token = extractToken(req)
     try {
-        const payload = jwt.verify(token, secret)
+        const payload = jwt_utils.decode(token)
         req.user = payload.sub
         next()
     } catch (err) {
@@ -31,5 +31,4 @@ function extractToken(req) {
     const token = authParts[0] === 'Bearer' ? authParts[1] : null
     return token
 }
-
 exports.extractToken = extractToken
