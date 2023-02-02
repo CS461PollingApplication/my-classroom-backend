@@ -1,10 +1,13 @@
-const jwt = require('jsonwebtoken')
+const jwt_utils = require('./jwt_utils')
 
 const { User } = require('../models/user')
 
 function generateAuthToken(user) {
-    const payload = { sub: user.id }
-    return jwt.sign(payload, secret, { expiresIn: '24h' })
+    const payload = {
+        sub: user.id,
+        admin: user.admin
+    }
+    return jwt_utils.encode(payload)
 }
 exports.generateAuthToken = generateAuthToken
 
