@@ -55,5 +55,9 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true
     })
 
+    Section.associate = (models) => {
+        Section.hasMany(models.Enrollment)
+    }
+
     return Section
 }
