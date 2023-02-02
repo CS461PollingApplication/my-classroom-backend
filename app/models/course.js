@@ -47,5 +47,10 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true
     })
 
+    Course.associate = (models) => {
+        Course.hasMany(models.Enrollment),
+        Course.hasMany(models.Section)
+    }
+
     return Course
 }

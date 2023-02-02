@@ -5,6 +5,7 @@ const { logger, morganMiddleware } = require('./services/logger')
 app.use(express.json())
 app.use(express.static('public'))
 app.use(morganMiddleware)
+app.use(require('./api/index'))
 
 // this is our global exception handler function. If an error is thrown, it lands here if not caught elsewhere
 app.use(function (err, req, res, next) {

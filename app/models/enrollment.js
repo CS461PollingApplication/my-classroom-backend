@@ -103,5 +103,10 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: true
     })
 
+    Enrollment.associate = (models) => {
+        Enrollment.belongsTo(models.Course)
+        Enrollment.belongsTo(models.Section)
+    }
+
     return Enrollment
 }
