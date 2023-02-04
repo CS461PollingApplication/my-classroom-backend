@@ -2,7 +2,7 @@ const db = require('../models')
 const { logger } = require('../../lib/logger')
 const router = require('express').Router()
 const { UniqueConstraintError, ValidationError } = require('sequelize')
-const { validateUserCreationRequest, extractUserCreationFields, filterUserFields } = require('../services/users_service')
+const usersService = require('../services/users_service')
 const { serializeSequelizeErrors, serializeStringArray } = require('../../lib/string_helpers')
 const { generateUserAuthToken, requireAuthentication } = require('../../lib/auth')
 
@@ -13,13 +13,13 @@ const { generateUserAuthToken, requireAuthentication } = require('../../lib/auth
 
 // POST '/users' create a user
 router.post('', async function (req, res) {
-    const missingFields = validateUserCreationRequest(req.body)
+    const missingFields = usersService.validateUserCreationRequest(req.body)
     if (missingFields.length == 0) {
       if (req.body.rawPassword == req.body.confirmedPassword) {
         try {
-          const user = await db.User.create(extractUserCreationFields(req.body))
+          const user = await db.User.create(usersService.extractUserCreationFields(req.body))
           res.status(201).send({
-            user: filterUserFields(user),
+            user: usersService.filterUserFields(user),
             token: generateUserAuthToken(user)
           })
         }

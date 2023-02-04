@@ -1,6 +1,4 @@
-const db = require('../models')
 const { extractValidFields, validateAgainstSchema } = require('../../lib/validator')
-const { logger } = require('../../lib/logger')
 
 const userInformationSchema = {
     firstName: { required: true },
@@ -18,14 +16,14 @@ const userCreationRequestSchema = {
     confirmedPassword: { required: true }
 }
 
-module.exports = {
-    validateUserCreationRequest: (body) => {
-        return validateAgainstSchema(body, userCreationRequestSchema)
-    },
-    extractUserCreationFields: (body) => {
-        return extractValidFields(body, userCreationSchema)
-    },
-    filterUserFields: (body) => {
-        return extractValidFields(body, userInformationSchema)
-    }
+exports.validateUserCreationRequest = (body) => {
+    return validateAgainstSchema(body, userCreationRequestSchema)
+}
+
+exports.extractUserCreationFields = (body) => {
+    return extractValidFields(body, userCreationSchema)
+}
+
+exports.filterUserFields = (body) => {
+    return extractValidFields(body, userInformationSchema)
 }
