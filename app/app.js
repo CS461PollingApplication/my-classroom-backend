@@ -17,7 +17,7 @@ app.use('/', api)
 // this is our global exception handler function. If an error is thrown, it lands here if not caught elsewhere
 app.use(function (err, req, res, next) {
     logger.error(err)
-    res.status(500).json({"error": "Something unexpected happened. Please try again or contact the admin"}).send()
+    res.status(500).send({error: "Something unexpected happened. Please try again or contact the admin"})
 })
 
 app.use('*', function(req, res) {

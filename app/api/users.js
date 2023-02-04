@@ -18,30 +18,30 @@ router.post('', async function (req, res) {
       if (req.body.rawPassword == req.body.confirmedPassword) {
         try {
           const user = await db.User.create(extractUserCreationFields(req.body))
-          res.status(201).json({
-            "user": filterUserFields(user),
-            "token": generateUserAuthToken(user)
-          }).send()
+          res.status(201).send({
+            user: filterUserFields(user),
+            token: generateUserAuthToken(user)
+          })
         }
         catch (e) {
           if (e instanceof UniqueConstraintError) {
-            res.status(400).json({"error": "An account associated with that email already exists"}).send()
+            res.status(400).send({error: "An account associated with that email already exists"})
           }
           else if (e instanceof ValidationError) {
-            res.status(400).json({"error": serializeSequelizeErrors(e)}).send()
+            res.status(400).send({error: serializeSequelizeErrors(e)})
           }
           else {
             logger.error(e)
-            res.status(500).json({"error": "An unexpected error occurred. Please try again"}).send()
+            res.status(500).send({error: "An unexpected error occurred. Please try again"})
           }
         }
       }
       else {
-        res.status(400).json({"error": "Password & confirmed password do not match"}).send()
+        res.status(400).send({error: "Password & confirmed password do not match"})
       }
     }
     else {
-      res.status(400).json({"error": `Missing fields required to create user: ${serializeStringArray(missingFields)}`}).send()
+      res.status(400).send({error: `Missing fields required to create user: ${serializeStringArray(missingFields)}`})
     }
 })
 
@@ -62,7 +62,7 @@ router.post('/authenticate', async function (req, res) {
 
 // GET 'users/:userId' authenticated as userId, requesting account information
 router.get('/:userId', async function (req, res) {
-  res.status(200).json({"success": "great job!"}).send()
+
 })
 
 // PUT 'users/:userId' authenticated as userId, requesting account information update
