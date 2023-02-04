@@ -1,4 +1,4 @@
-const db = require('../../../app/models/index')
+const db = require('../../../app/models')
 const moment = require('moment')
 
 describe("Course model", () => {
