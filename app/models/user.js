@@ -130,18 +130,18 @@ module.exports = (sequelize, DataTypes) => {
             beforeCreate: async (user) => {
                 user.password = await bcrypt.hash(user.rawPassword, saltRounds)
             },
-            afterCreate: async (user) => {
-                await welcome(user)
-                await user.generateEmailConfirmation()
+            afterCreate: (user) => {
+                welcome(user)
+                user.generateEmailConfirmation()
             },
             beforeUpdate: async (user) => {
                 if (user.rawPassword) {
                     user.password = await bcrypt.hash(user.rawPassword, saltRounds)
                 }
             },
-            afterUpdate: async (user) => {
+            afterUpdate: (user) => {
                 if (user._previousDataValues.email != user.email) {
-                    await user.generateEmailConfirmation()
+                    user.generateEmailConfirmation()
                 }
             }
         }
@@ -152,12 +152,12 @@ module.exports = (sequelize, DataTypes) => {
         return bcrypt.compareSync(password, this.password)
     }
 
-    User.prototype.generateEmailConfirmation = async function () {
+    User.prototype.generateEmailConfirmation = function () {
         this.emailConfirmationCode = this.generateOTP()
         // because we are using DATE in sequelize (DATETIME in MYSQL), we convert to UTC timezone for standardized storage & comparisons
         // MySQL documentation here: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
         this.emailConfirmationExpiresAt = moment().add(5, 'm').utc().format("YYYY-MM-DD HH:mm:ss") // set expiration to NOW + 5 minutes
-        await confirmation(this)
+        confirmation(this)
         return this.emailConfirmationCode
     }
 
