@@ -19,10 +19,7 @@ describe("Session model", () => {
         })
 
         it ("Should return true, as the session expired", async() =>{
-            console.log(session.expires)
-            console.log(moment().subtract(2, 'minutes').utc().format("YYYY-MM-DD HH:mm:ss"))
-            await session.update({expires: moment().subtract(1, 'minutes').utc().format("YYYY-MM-DD HH:mm:ss")})
-            console.log(moment(session.expires))
+            await session.update({expires: moment().subtract(1, 'minutes')})
             expect(session.checkIfExpired()).toEqual(true) 
         })
     })

@@ -28,9 +28,7 @@ module.exports = (sequelize, DataTypes) => {
 
     //Sends true if the current session is expired, false if not
     Session.prototype.checkIfExpired = function (){
-        console.log(moment(this.expires))
-        console.log(moment().utc())
-        return (moment().utc()).isAfter(moment(this.expires));
+        return moment().isAfter(moment(this.expires));
     }
 
     return Session;
