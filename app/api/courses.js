@@ -3,6 +3,18 @@ const router = Router()
 const db = require('../models/index')
 const { logger } = require('../services/logger')
 
+// determine if a user is in a course, via enrollments table
+// true = yes, false = no
+async function isUserInCourse(userId, courseId) {
+    const enrollment = await db.Enrollment.findOne({
+        where: { 
+            userId: userId,
+            courseId: courseId
+        }
+    })
+    return enrollment != null   // return true or false depending if a value was found
+}
+
 //GET request from /courses homepage
 router.get('/', async function (req, res) {
     // TODO: use the authentication token (bearer) to authenticate & find the user
@@ -36,6 +48,18 @@ router.get('/', async function (req, res) {
         "studentCourses": studentCourses,
         "teacherCourses": teacherCourses
     })
+})
+
+router.use('/:course_id/lectures', async function (req, res) {
+    // TODO: validate user
+    if (!isUserInCourse(user.id, req.params.course_id)) {  // if this user isn't in this course
+        res.status(403).send()
+    }
+    else {
+        // because of the checks above, all request handlers in lectures.js assume user validity and
+        // that user is in this course
+        require('./lectures.js')
+    }
 })
 
 module.exports = router
