@@ -12,7 +12,7 @@ const { generateUserAuthToken, requireAuthentication } = require('../../lib/auth
 */
 
 // POST '/users' create a user
-router.post('', async function (req, res) {
+router.post('', async function (req, res, next) {
     const missingFields = usersService.validateUserCreationRequest(req.body)
     if (missingFields.length == 0) {
       if (req.body.rawPassword == req.body.confirmedPassword) {
@@ -31,8 +31,7 @@ router.post('', async function (req, res) {
             res.status(400).send({error: serializeSequelizeErrors(e)})
           }
           else {
-            logger.error(e)
-            res.status(500).send({error: "An unexpected error occurred. Please try again"})
+            next(e)
           }
         }
       }
@@ -50,9 +49,46 @@ router.put('/password', async function (req, res) {
 
 })
 
-// POST 'users/authenticate' login request for a user
-router.post('/authenticate', async function (req, res) {
-
+// POST 'users/login' login request for a user
+router.post('/login', async function (req, res, next) {
+  const missingFields = usersService.validateUserLoginRequest(req.body)
+  if (missingFields.length == 0) {
+    const user = await db.User.findOne({ where: { email: req.body.email } })
+    if (user == null) {
+      res.status(404).send({error: `No account found with email: ${req.body.email}`})
+    }
+    else {
+      try {
+        const loginStatus = user.login(req.body.rawPassword)
+        switch (loginStatus) {
+          case -3:
+            res.status(401).send({error: `This account has been locked until the password is reset. An email should have been sent with instructions`})
+            break
+          case -2:
+            res.status(401).send({error: `Incorrect password. Your account has been locked. You will need to reset your password before logging in. An email should have been sent to your inbox`})
+            break
+          case -1:
+            res.status(401).send({error: `Incorrect password. Your account will be locked after ${3 - user.failedLoginAttempts} more unsuccessful attempts`})
+            break
+          case (loginStatus >= 0):
+            res.status(200).send({
+              user: usersService.filterUserFields(user),
+              token: generateUserAuthToken(user),
+              loginStatus: loginStatus
+            })
+            break
+          default:
+            throw new Error("User login returned an unexpected loginStatus")
+        }
+      }
+      catch (e) {
+        next(e)
+      }
+    }
+  }
+  else {
+    res.status(400).send({error: `Missing fields required to authenticate user: ${serializeStringArray(missingFields)}`})
+  }
 })
 
 /*

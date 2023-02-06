@@ -176,6 +176,7 @@ module.exports = (sequelize, DataTypes) => {
         // MySQL documentation here: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
         this.passwordResetExpiresAt = moment().add(5, 'm').utc().format("YYYY-MM-DD HH:mm:ss") // set expiration to NOW + 5 minutes
         this.passwordResetInitiated = true
+        mailer.passwordReset(this)
         return this.passwordResetCode
     }
 
@@ -188,6 +189,53 @@ module.exports = (sequelize, DataTypes) => {
         this.passwordResetInitiated = !passwordReset
         // TODO: sign a JWT that authenticates a password reset
         return passwordReset
+    }
+
+    User.prototype.loggedIn = function () {
+        this.lastLogin = moment().utc().format("YYYY-MM-DD HH:mm:ss")
+        this.failedLoginAttempts = 0
+    }
+
+    /*
+        Different integers are associated with different statuses of logging in the user
+
+        0: success
+        -1: invalid password
+        -2: invalid password. Password reset because 3rd failure in a row
+        -3: account is locked from too many login failures
+        1: waiting on a password reset - no login failures. User can still login here but track this status for frontend
+        2: waiting on email confirmation. User can still login here but track this status for frontend 
+    */
+    User.prototype.login = function (password) {
+        if (this.failedLogginAttempts <= 3){
+            if (this.emailConfirmed) {
+                if (this.validatePassword(password)) {
+                    this.loggedIn
+                    if (this.passwordResetInitiated) {
+                        return 1
+                    }
+                    else {
+                        return 0
+                    }
+                }
+                else {
+                    this.failedLoginAttempts = this.failedLoginAttempts + 1
+                    if (this.failedLoginAttempts == 3) {
+                        this.generatePasswordReset()
+                        return -2
+                    }
+                    else {
+                        return -1
+                    }
+                }
+            }
+            else {
+                return 2
+            }
+        }
+        else {
+            return -3
+        }
     }
 
     // generates a one time password of length otpLength and containing digits 0-9 & all lowercase letters in the English alphabet
