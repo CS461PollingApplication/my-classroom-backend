@@ -12,7 +12,7 @@ async function isUserInCourse(userId, courseId) {
             courseId: courseId
         }
     })
-    return enrollment != null   // return true or false depending if a value was found
+    return enrollment != null   // return true if a value was found, false otherwise
 }
 
 //GET request from /courses homepage
@@ -51,7 +51,7 @@ router.get('/', async function (req, res) {
 })
 
 router.use('/:course_id/lectures', async function (req, res) {
-    // TODO: validate user
+    // TODO: authenticate user
     if (!isUserInCourse(user.id, req.params.course_id)) {  // if this user isn't in this course
         res.status(403).send()
     }
