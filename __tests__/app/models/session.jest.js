@@ -3,10 +3,18 @@ const moment = require('moment')
 
 describe("Session model", () => {
     let session
+    let user
 
     beforeAll(async() => {
-        //await db.sequelize.sync() // connect to the database
-        session = await db.Session.create()
+        user = await db.User.create({
+            email: "session@myclassroom.com",
+            rawPassword: "passwordmystery!!!",
+            firstName: "Memer",
+            lastName: "McMemerson"
+        })
+        session = await db.Session.create({
+            userId: user.id
+        })
     })
 
     describe("Session.create", () => {
@@ -26,10 +34,6 @@ describe("Session model", () => {
     
 
     afterAll(async () => {
-        await db.Session.destroy({ // delete all session records to flush out the database after the tests have run
-            where: {},
-            truncate: true
-        })
-        //await db.sequelize.close()
+        await user.destroy()
     })
 })

@@ -10,21 +10,25 @@ module.exports = (sequelize, DataTypes) => {
             autoIncrement: true,
             primaryKey: true
         },
-        //foriegn key for user, uncomment 
-        //user_id: {
-        //    type: DataTypes.INTEGER,
-        //    allowNull: false,
-        //    references: {
-        //        model: User,
-        //        key: 'id'
-        //    },
-        //},
+        userId: {
+           type: DataTypes.INTEGER,
+           allowNull: false,
+           references: {
+               model: 'Users',
+               key: 'id'
+           },
+           onDelete: 'CASCADE'
+        },
         expires: {
             type: DataTypes.DATE(6),
             defaultValue: moment().add(4, 'H').utc().format("YYYY-MM-DD HH:mm:ss"),
             allowNull: false
         }
     })
+
+    Session.associate = (models) => {
+        Session.belongsTo(models.User)
+    }
 
     //Sends true if the current session is expired, false if not
     Session.prototype.checkIfExpired = function (){
