@@ -25,6 +25,16 @@ module.exports = {
           type: Sequelize.DATE(6),
           defaultValue: moment().add(4, 'H').utc().format("YYYY-MM-DD HH:mm:ss"),
           allowNull: false
+      },
+      createdAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+      },
+      updatedAt: {
+        allowNull: false,
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     })
   },
