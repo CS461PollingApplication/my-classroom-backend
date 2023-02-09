@@ -16,11 +16,14 @@ const userCreationRequestSchema = {
     confirmedPassword: { required: true }
 }
 
+<<<<<<< HEAD
 const userLoginRequestSchema = {
     email: { required: true },
     rawPassword: { required: true }
 }
 
+=======
+>>>>>>> master
 exports.validateUserCreationRequest = (body) => {
     return validateAgainstSchema(body, userCreationRequestSchema)
 }
@@ -31,8 +34,11 @@ exports.extractUserCreationFields = (body) => {
 
 exports.filterUserFields = (body) => {
     return extractValidFields(body, userInformationSchema)
+<<<<<<< HEAD
 }
 
 exports.validateUserLoginRequest = (body) => {
     return validateAgainstSchema(body, userLoginRequestSchema)
+=======
+>>>>>>> master
 }
