@@ -2,16 +2,15 @@ const { Router } = require('express')
 const course = require('../models/course')
 const router = Router()
 const db = require('../models/index')
-const { logger } = require('../services/logger')
+const { logger } = require('../../lib/logger')
 const courseService = require('../services/course_service')
+const enrollmentService = require('../services/enrollment_service')
+const { generateUserAuthToken, requireAuthentication } = require('../../lib/auth')
 
 //GET request from /courses homepage
-router.get('/', async function (req, res) {
+router.get('/', requireAuthentication, async function (req, res) {
     // TODO: use the authentication token (bearer) to authenticate & find the user
-    const user = await db.User.findOne({ // replace this with a find to get the user by id (available after authentication)
-        where: { email: 'memer@myclassroom.com' }
-    })
-
+    const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const teacherCourses = await db.Course.findAll({
         include: [{
             model: db.Enrollment,
@@ -31,41 +30,43 @@ router.get('/', async function (req, res) {
             }
         ]
     })
-    // if (teacherCourses == [] && studentCourses == []) {
-    //     res.status(204).send()
-    // }
-    res.status(200).json({
-        "studentCourses": studentCourses,
-        "teacherCourses": teacherCourses
+    res.status(200).send({
+        studentCourses : studentCourses,
+        teacherCourses : teacherCourses
     })
+
 })
 
 //User Creates a course
 //Authenticate token, create course & create enrollment for logged in user as teacher in the course
-router.post('/', async function (req, res) {
-    //TODO: Authenticate token to find user 
-    const user = await db.User.findOne({ // replace this with a find to get the user by id (available after authentication)
-        where: { email: 'memer@myclassroom.com' }
-    })
-    
-    //create course & role as a teacher in enrollment
-    //create course 
-    try{
-        //change to use course_service.js with req.body
-        //create the course
-        const course = await db.Course.create(req.body)
+router.post('/', requireAuthentication, async function (req, res) {
+    const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
 
-        //create the enrollment
-        //change to use course_service.js with req.body
-        //use the userid, courseid we just recieved 
-        const enrollment = await db.Enrollment.create(req.body, course.id, user.id, [])
+    // create course & role as a teacher in enrollment
+    // create course 
+    if (req.body.name) { // name is required, other fields can be left unspecified
+        // create course with valid fields
+        const course = await db.Course.create(courseService.extractCourseFields(req.body))
         
-        res.status(201).send({
-
-        })
-    }
-    catch (e) {
-
+        //create the enrollment
+        const enrollmentToInsert = {
+            courseId: course.id,
+            userId: user.id,
+            role: 'teacher'
+            // no section because they are a teacher
+        }
+        const missingFields = enrollmentService.validateEnrollmentCreationRequest(enrollmentToInsert)
+        if (missingFields.length == 0) {
+            const enrollment = await db.Enrollment.create(enrollmentToInsert)
+            res.status(201).send({
+                course: course,
+                enrollment: enrollment
+            })
+        } else {
+            res.status(400).send({error: `Enrollment did not have all the required fields, it was missing ${missingFields}`})
+        }
+    } else {
+        res.status(400).send({error: "A course requires a name"})
     }
 
 })
