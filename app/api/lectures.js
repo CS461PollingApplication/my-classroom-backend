@@ -1,7 +1,6 @@
 const { Router } = require('express')
 const router = Router()
 const db = require('../models/index')
-const section = require('../models/section')
 
 // base path: /courses/:course_id/lectures
 
@@ -65,7 +64,7 @@ router.post('/', async function (req, res) {
         // create lecture object
         newLec = req.body
         newLec.push({courseId: courseId})
-        try {   
+        try {
             lecture = await db.Lecture.create(newLec)
         }
         catch (e) {
@@ -81,8 +80,8 @@ router.post('/', async function (req, res) {
         }
         try {
             // iterate through each section in this course and add relationship
-            for (let i = 0; i < section.length; i++) {
-                db.LectureForSection.create({
+            for (let i = 0; i < sectionIds.length; i++) {
+                await db.LectureForSection.create({
                     lectureId: lecture.id,
                     sectionId: sectionIds[i].id
                     // TODO: currently no other fields are being added here
@@ -95,6 +94,32 @@ router.post('/', async function (req, res) {
             res.status(400).send({error: "Unable to create association between lecture & this course' sections"})
         }
         res.status(200).json(lecture)   // all good, return lecture object
+    }
+    else {      // if user is not a teacher
+        res.status(403).send()
+    }
+})
+
+router.put('/:lecture_id', async function (req, res) {
+    const user = req.user
+    const lectureId = req.params.lecture_id
+    const enrollment = getEnrollment(user.id, courseId)
+    var lecture     // will hold the updated lecture object from database
+
+    if (enrollment.role == 'teacher') {
+        updatedLec = req.body
+        try {
+            ret_obj = await db.Lecture.update(
+                updatedLec,     // provided body from request
+                { where: { id: lectureId }, returning: true }
+            )
+            lecture = ret_obj[1]    // index-1 of return holds the updated lecture
+        }
+        catch (e) {
+            // TODO: send back better error msg using exception 'e' (/lib/string_helpers.js - serializeSequelizeErrors())
+            res.status(400).send({error: "Unable to update lecture object"})
+        }
+        res.status(200).json(lecture)   // all good, return updated lecture object
     }
     else {      // if user is not a teacher
         res.status(403).send()
