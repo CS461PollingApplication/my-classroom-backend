@@ -1,7 +1,6 @@
 const { Router } = require('express')
 const router = Router()
 const db = require('../models/index')
-const { logger } = require('../services/logger')
 
 // determine if a user is in a course, via enrollments table
 // true = yes, false = no
