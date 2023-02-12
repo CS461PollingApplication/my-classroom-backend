@@ -210,12 +210,12 @@ module.exports = (sequelize, DataTypes) => {
         1: waiting on a password reset - no login failures. User can still login here but track this status for frontend
         2: waiting on email confirmation. User can still login here but track this status for frontend 
     */
-    User.prototype.login = function (password) {
-        if (this.failedLogginAttempts <= 3){
-            if (this.emailConfirmed) {
-                if (this.validatePassword(password)) {
-                    this.loggedIn
-                    if (this.passwordResetInitiated) {
+    const login = (user, password) => {
+        if (user.failedLoginAttempts < 3){
+            if (user.validatePassword(password)) {
+                user.loggedIn()
+                if (user.emailConfirmed) {
+                    if (user.passwordResetInitiated) {
                         return 1
                     }
                     else {
@@ -223,23 +223,29 @@ module.exports = (sequelize, DataTypes) => {
                     }
                 }
                 else {
-                    this.failedLoginAttempts = this.failedLoginAttempts + 1
-                    if (this.failedLoginAttempts == 3) {
-                        this.generatePasswordReset()
-                        return -2
-                    }
-                    else {
-                        return -1
-                    }
+                    return 2
                 }
             }
             else {
-                return 2
+                user.failedLoginAttempts = user.failedLoginAttempts + 1
+                if (user.failedLoginAttempts == 3) {
+                    user.generatePasswordReset()
+                    return -2
+                }
+                else {
+                    return -1
+                }
             }
         }
         else {
             return -3
         }
+    }
+
+    User.prototype.login = async function (password) {
+        const loginStatus = login(this, password)
+        await this.save()
+        return loginStatus
     }
 
     // generates a one time password of length otpLength and containing digits 0-9 & all lowercase letters in the English alphabet

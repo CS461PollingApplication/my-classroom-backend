@@ -59,7 +59,7 @@ router.post('/login', async function (req, res, next) {
     }
     else {
       try {
-        const loginStatus = user.login(req.body.rawPassword)
+        const loginStatus = await user.login(req.body.rawPassword)
         switch (loginStatus) {
           case -3:
             res.status(401).send({error: `This account has been locked until the password is reset. An email should have been sent with instructions`})
@@ -70,15 +70,17 @@ router.post('/login', async function (req, res, next) {
           case -1:
             res.status(401).send({error: `Incorrect password. Your account will be locked after ${3 - user.failedLoginAttempts} more unsuccessful attempts`})
             break
-          case (loginStatus >= 0):
-            res.status(200).send({
-              user: usersService.filterUserFields(user),
-              token: generateUserAuthToken(user),
-              loginStatus: loginStatus
-            })
-            break
           default:
-            throw new Error("User login returned an unexpected loginStatus")
+            if (loginStatus >= 0) {
+              res.status(200).send({
+                user: usersService.filterUserFields(user),
+                token: generateUserAuthToken(user),
+                loginStatus: loginStatus
+              })
+            }
+            else {
+              throw new Error(`User login returned an unexpected loginStatus: ${loginStatus}`)
+            }
         }
       }
       catch (e) {

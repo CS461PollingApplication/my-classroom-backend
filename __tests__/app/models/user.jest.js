@@ -234,22 +234,22 @@ describe("User model", () => {
             code = user.generateEmailConfirmation()
             expect(user.emailConfirmationCode).toEqual(code)
             expect(user.emailConfirmationCode).not.toBeNull()
-            expect(user.emailConfirmationExpired()).toBeFalsy()
+            expect(user.emailConfirmationExpired()).toEqual(false)
             expect((now.minutes() + 5) % 60).toEqual(moment(user.emailConfirmationExpiresAt).minutes())
             expect(confirmation).toHaveBeenCalledTimes(1)
             expect(confirmation).toHaveBeenCalledWith(user)
         })
 
         it ("should validate that the email confirmation is correct", () => {
-            expect(user.validateEmailConfirmation(code)).toBeTruthy()
-            expect(user.emailConfirmationExpired()).toBeFalsy()
-            expect(user.emailConfirmed).toBeTruthy()
+            expect(user.validateEmailConfirmation(code)).toEqual(true)
+            expect(user.emailConfirmationExpired()).toEqual(false)
+            expect(user.emailConfirmed).toEqual(true)
         })
 
         it ("should invalidate the email confirmation because of incorrect code", () => {
-            expect(user.validateEmailConfirmation('A12345')).toBeFalsy()
-            expect(user.emailConfirmationExpired()).toBeFalsy()
-            expect(user.emailConfirmed).toBeFalsy()
+            expect(user.validateEmailConfirmation('A12345')).toEqual(false)
+            expect(user.emailConfirmationExpired()).toEqual(false)
+            expect(user.emailConfirmed).toEqual(false)
         })
 
         it ("should correctly compute an expired confirmation", () => {
