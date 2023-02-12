@@ -2,17 +2,6 @@ const { Router } = require('express')
 const router = Router()
 const db = require('../models/index')
 
-// determine if a user is in a course, via enrollments table
-// true = yes, false = no
-async function isUserInCourse(userId, courseId) {
-    const enrollment = await db.Enrollment.findOne({
-        where: { 
-            userId: userId,
-            courseId: courseId
-        }
-    })
-    return enrollment != null   // return true if a value was found, false otherwise
-}
 
 //GET request from /courses homepage
 router.get('/', async function (req, res) {
@@ -49,16 +38,6 @@ router.get('/', async function (req, res) {
     })
 })
 
-router.use('/:course_id/lectures', async function (req, res) {
-    // TODO: authenticate user
-    if (!isUserInCourse(user.id, req.params.course_id)) {  // if this user isn't in this course
-        res.status(403).send()
-    }
-    else {
-        // because of the checks above, all request handlers in lectures.js assume user validity and
-        // that user is in this course
-        require('./lectures.js')
-    }
-})
+router.use('/:course_id/lectures', require('./lectures'))
 
 module.exports = router
