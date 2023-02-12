@@ -10,7 +10,7 @@ async function getUserFromEmail(email) {
     })
 }
 
-describe('GET /courses/:course_id/lectures', () => {
+describe('Test api/lecture.js request handlers', () => {
     let course, course_published, section1, section2, teacher_resp, teacher, teacherToken, student_resp, student, studentToken, unrelated_resp, unrelated, unrelatedToken, enrollment1, enrollment2, enrollment3, lecture1, lecture2
     
     beforeAll(async () => {
@@ -153,47 +153,94 @@ describe('GET /courses/:course_id/lectures', () => {
         //     published: false
         // })
     })
+
+    describe('GET /courses/:course_id/lectures', () => {
     
-    it('should respond 204 for a student in unpublished course', async () => {
-        const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer ${studentToken}`)
+        it('should respond 204 for a student in unpublished course', async () => {
+            const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer ${studentToken}`)
+            
+            expect(resp.statusCode).toEqual(204)
+        })
+
+        it('should respond with 401 for bad authorization token', async () => {
+            const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer badbearedtoken:(`)
+            
+            expect(resp.statusCode).toEqual(401)
+        })
+
+        it('should respond with 403 for someone who is not in course', async () => {
+            const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer ${unrelatedToken}`)
+            
+            expect(resp.statusCode).toEqual(403)
+        })
+
+        it('should respond with 200 and lecture details for teacher', async () => {
+            const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer ${teacherToken}`)
         
-        expect(resp.statusCode).toEqual(204)
+            expect(resp.statusCode).toEqual(200)
+            expect(resp.body.lecture.length).toEqual(1)
+            expect(resp.body.lecture[0].title).toEqual('question set 1')
+            expect(resp.body.lecture[0].order).toEqual(1)
+            expect(resp.body.lecture[0].description).toEqual('intro qs')
+            expect(resp.body.lecture[0].courseId).toEqual(course.id)
+        })
+
+        it('should respond with 200 and lecture details for student in published course', async () => {
+            const resp = await request(app).get(`/courses/${course_published.id}/lectures`).set('Authorization', `Bearer ${studentToken}`)
+        
+            expect(resp.statusCode).toEqual(200)
+            expect(resp.body.lecture.length).toEqual(1)
+            expect(resp.body.lecture[0].title).toEqual('question set 2')
+            expect(resp.body.lecture[0].order).toEqual(2)
+            expect(resp.body.lecture[0].description).toEqual('intermediate qs')
+            expect(resp.body.lecture[0].courseId).toEqual(course_published.id)
+        })
     })
 
-    it('should respond with 401 for bad authorization token', async () => {
-        const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer badbearedtoken:(`)
-        
-        expect(resp.statusCode).toEqual(401)
-    })
+    describe('POST /courses/:course_id/lectures', () => {
+        it('should respond with 401 for bad authorization token', async () => {
+            const resp = await request(app).post(`/courses/${course.id}/lectures`).send({
+                title: "fresh lec",
+                description: "just another lecture"
+            }).set('Authorization', `Bearer waytoobadtoken`)            
+            expect(resp.statusCode).toEqual(401)
+        })
 
-    it('should respond with 403 for someone who is not in course', async () => {
-        const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer ${unrelatedToken}`)
-        
-        expect(resp.statusCode).toEqual(403)
-    })
+        it('should respond with 403 for someone who is not in course', async () => {
+            const resp = await request(app).post(`/courses/${course.id}/lectures`).send({
+                title: "fresh lec",
+                description: "just another lecture"
+            }).set('Authorization', `Bearer ${unrelatedToken}`)
+            
+            expect(resp.statusCode).toEqual(403)
+        })
 
-    it('should respond with 200 and lecture details for teacher', async () => {
-        const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer ${teacherToken}`)
+        it('should respond with 403 for student', async () => {
+            const resp = await request(app).post(`/courses/${course.id}/lectures`).send({
+                title: "fresh lec",
+                description: "just another lecture"
+            }).set('Authorization', `Bearer ${studentToken}`)            
+            expect(resp.statusCode).toEqual(403)
+        })
+
+        it('should respond with 400 for missing lecture title', async () => {
+            const resp = await request(app).post(`/courses/${course.id}/lectures`).send({
+                description: "just another lecture"
+            }).set('Authorization', `Bearer ${teacherToken}`)            
+            
+            expect(resp.statusCode).toEqual(400)
+        })
+
+        it('should respond with 201 if teacher successfully creates lecture', async () => {
+            const resp = await request(app).post(`/courses/${course.id}/lectures`).send({
+                title: "fresh lec",
+                description: "just another lecture"
+            }).set('Authorization', `Bearer ${teacherToken}`)            
+            
+            expect(resp.statusCode).toEqual(201)
+        })
+    })
     
-        expect(resp.statusCode).toEqual(200)
-        expect(resp.body.lecture.length).toEqual(1)
-        expect(resp.body.lecture[0].title).toEqual('question set 1')
-        expect(resp.body.lecture[0].order).toEqual(1)
-        expect(resp.body.lecture[0].description).toEqual('intro qs')
-        expect(resp.body.lecture[0].courseId).toEqual(course.id)
-    })
-
-    it('should respond with 200 and lecture details for student in published course', async () => {
-        const resp = await request(app).get(`/courses/${course_published.id}/lectures`).set('Authorization', `Bearer ${studentToken}`)
-    
-        expect(resp.statusCode).toEqual(200)
-        expect(resp.body.lecture.length).toEqual(1)
-        expect(resp.body.lecture[0].title).toEqual('question set 2')
-        expect(resp.body.lecture[0].order).toEqual(2)
-        expect(resp.body.lecture[0].description).toEqual('intermediate qs')
-        expect(resp.body.lecture[0].courseId).toEqual(course_published.id)
-    })
-
     afterAll(async () => {
         await course.destroy()
         await course_published.destroy()

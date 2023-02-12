@@ -88,36 +88,32 @@ router.post('/', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const courseId = req.params.course_id
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
+    var lecture     // will hold the returned lecture object from database
+
     if (enrollment == null) {   // if user is not enrolled in this course
         res.status(403).send()
     }
-    var lecture     // will hold the returned lecture object from database
-
-    // TODO: how are we treating the role 'ta'?
-    if (enrollment.role == 'teacher') {
+    else if (enrollment.role == 'teacher') {
         // create lecture object
-        newLec = req.body
-        newLec.push({courseId: courseId})
+        let newLec = req.body
+        newLec['courseId'] = courseId
         try {
             lecture = await db.Lecture.create(newLec)
         }
         catch (e) {
             // TODO: send back better error msg using exception 'e' (/lib/string_helpers.js - serializeSequelizeErrors())
             res.status(400).send({error: "Unable to create lecture object"})
+            return
         }
 
         // create lecture-section association for all sections in course
         const sectionIds = await getSectionsIdsFromCourse(courseId);
-        if (sectionIds.length == 0) {
-            res.status(400).send({error: "There are no sections in this course, cannot create lecture"})
-            // TODO: delete the lecture created above?
-        }
         try {
             // iterate through each section in this course and add relationship
             for (let i = 0; i < sectionIds.length; i++) {
                 await db.LectureForSection.create({
                     lectureId: lecture.id,
-                    sectionId: sectionIds[i].id
+                    sectionId: sectionIds[i]
                     // TODO: currently no other fields are being added here
                     // ...should it be added here, or in /:section_id/lectures ?
                 })
@@ -126,8 +122,9 @@ router.post('/', requireAuthentication, async function (req, res) {
         catch (e) {
             // TODO: send back better error msg using exception 'e' (/lib/string_helpers.js - serializeSequelizeErrors())
             res.status(400).send({error: "Unable to create association between lecture & this course' sections"})
+            return
         }
-        res.status(200).json(lecture)   // all good, return lecture object
+        res.status(201).json(lecture)   // all good, return lecture object
     }
     else {      // if user is not a teacher
         res.status(403).send()
@@ -138,12 +135,12 @@ router.put('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const lectureId = req.params.lecture_id
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
+    var lecture     // will hold the updated lecture object from database
+
     if (enrollment == null) {   // if user is not enrolled in this course
         res.status(403).send()
     }
-    var lecture     // will hold the updated lecture object from database
-
-    if (enrollment.role == 'teacher') {
+    else if (enrollment.role == 'teacher') {
         updatedLec = req.body
         try {
             ret_obj = await db.Lecture.update(
@@ -167,12 +164,12 @@ router.get('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const lectureId = req.params.lecture_id
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
+    var full_response = {}  // will hold response with lecture info and related questions
+
     if (enrollment == null) {   // if user is not enrolled in this course
         res.status(403).send()
     }
-    var full_response = {}  // will hold response with lecture info and related questions
-
-    if (enrollment.role == 'teacher') {     // if teacher, send lecture info & all related questions
+    else if (enrollment.role == 'teacher') {     // if teacher, send lecture info & all related questions
         try {
             const lecture = await getLecture(lectureId)
             full_response.push(lecture)
@@ -223,8 +220,7 @@ router.delete('/:lecture_id', requireAuthentication, async function (req, res) {
     if (enrollment == null) {   // if user is not enrolled in this course
         res.status(403).send()
     }
-
-    if (enrollment.role != 'teacher') {
+    else if (enrollment.role != 'teacher') {
         res.status(403).send()
     }
     else {  // if user is a teacher
