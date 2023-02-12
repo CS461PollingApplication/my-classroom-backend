@@ -36,16 +36,16 @@
 			]
 		},
 		{
-			"name": "Authenticate",
+			"name": "Login",
 			"item": [
 				{
-					"name": "Authenticate User (login)",
+					"name": "Login",
 					"request": {
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"email\": {{email}},\r\n    \"password\": {{password}}\r\n}",
+							"raw": "{\n    \"email\": \"testuser@myclassroom.com\",\n    \"rawPassword\": \"passwordpassword\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -53,13 +53,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{domainName}}/users/authenticate",
+							"raw": "{{domainName}}/users/login",
 							"host": [
 								"{{domainName}}"
 							],
 							"path": [
 								"users",
-								"authenticate"
+								"login"
 							]
 						}
 					},
