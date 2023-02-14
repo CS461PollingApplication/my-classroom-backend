@@ -21,6 +21,19 @@ const userLoginRequestSchema = {
     rawPassword: { required: true }
 }
 
+const userPasswordChangeRequestSchema = {
+    oldPassword: { required: true },
+    rawPassword: { required: true },
+    confirmedPassword: { required: true }
+}
+
+const userPasswordResetRequestSchema = {
+    email: { required: true },
+    passwordResetCode: { required: true },
+    rawPassword: { required: true },
+    confirmedPassword: { required: true }
+}
+
 exports.validateUserCreationRequest = (body) => {
     return validateAgainstSchema(body, userCreationRequestSchema)
 }
@@ -35,4 +48,12 @@ exports.filterUserFields = (body) => {
 
 exports.validateUserLoginRequest = (body) => {
     return validateAgainstSchema(body, userLoginRequestSchema)
+}
+
+exports.validateUserPasswordChangeRequest = (body) => {
+    return validateAgainstSchema(body, userPasswordChangeRequestSchema)
+}
+
+exports.validateUserPasswordResetRequest = (body) => {
+    return validateAgainstSchema(body, userPasswordResetRequestSchema)
 }

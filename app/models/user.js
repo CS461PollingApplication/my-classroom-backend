@@ -174,30 +174,36 @@ module.exports = (sequelize, DataTypes) => {
         return this.emailConfirmed
     }
 
-    User.prototype.generatePasswordReset = function () {
-        this.passwordResetCode = this.generateOTP()
+    const generatePasswordReset = function (user) {
+        user.passwordResetCode = user.generateOTP()
         // because we are using DATE in sequelize (DATETIME in MYSQL), we convert to UTC timezone for standardized storage & comparisons
         // MySQL documentation here: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
-        this.passwordResetExpiresAt = moment().add(5, 'm').utc().format("YYYY-MM-DD HH:mm:ss") // set expiration to NOW + 5 minutes
-        this.passwordResetInitiated = true
-        mailer.passwordReset(this)
-        return this.passwordResetCode
+        user.passwordResetExpiresAt = moment().add(5, 'm').utc().format("YYYY-MM-DD HH:mm:ss") // set expiration to NOW + 5 minutes
+        user.passwordResetInitiated = true
+        mailer.passwordReset(user)
+        return user.passwordResetCode
+    }
+
+    User.prototype.generatePasswordReset = async function () {
+        const resetCode = generatePasswordReset(this)
+        await this.save()
+        return resetCode
+    }
+
+    User.prototype.resetPassword = async function (password) {
+        await this.update({ rawPassword: password, passwordResetInitiated: false, failedLoginAttempts: 0, lastLogin: moment().utc().format("YYYY-MM-DD HH:mm:ss") })
     }
 
     User.prototype.passwordResetExpired = function () {
-        return !moment().utc().isBefore(moment(this.passwordResetExpiresAt))
+        const now = moment().utc()
+        const expiration = moment(this.passwordResetExpiresAt)
+        return !now.isBefore(expiration)
     }
 
     User.prototype.validatePasswordReset = function (code) {
         const passwordReset = code == this.passwordResetCode
         this.passwordResetInitiated = !passwordReset
-        // TODO: sign a JWT that authenticates a password reset
         return passwordReset
-    }
-
-    User.prototype.loggedIn = function () {
-        this.lastLogin = moment().utc().format("YYYY-MM-DD HH:mm:ss")
-        this.failedLoginAttempts = 0
     }
 
     /*
@@ -213,7 +219,8 @@ module.exports = (sequelize, DataTypes) => {
     const login = (user, password) => {
         if (user.failedLoginAttempts < 3){
             if (user.validatePassword(password)) {
-                user.loggedIn()
+                user.lastLogin = moment().utc().format("YYYY-MM-DD HH:mm:ss")
+                user.failedLoginAttempts = 0
                 if (user.emailConfirmed) {
                     if (user.passwordResetInitiated) {
                         return 1

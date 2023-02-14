@@ -276,9 +276,9 @@ describe("User model", () => {
             })
         })
 
-        it ("should set the password expiration, code, and initiated value", () => {
+        it ("should set the password expiration, code, and initiated value", async () => {
             const now = moment().utc()
-            code = user.generatePasswordReset()
+            code = await user.generatePasswordReset()
             expect(user.passwordResetCode).toEqual(code)
             expect(user.passwordResetCode).not.toBeNull()
             expect(user.passwordResetInitiated).toBeTruthy()
@@ -298,11 +298,11 @@ describe("User model", () => {
             expect(user.passwordResetInitiated).toBeTruthy()
         })
 
-        it ("should correctly compute an expired password reset", () => {
+        it ("should correctly compute an expired password reset", async () => {
             user.passwordResetExpiresAt = moment().utc()
-            user.save
+            await user.save()
             expect(user.passwordResetInitiated).toBeTruthy()
-            expect(user.passwordResetExpired()).toBeTruthy()
+            expect(user.passwordResetExpired()).toEqual(true)
         })
 
         afterAll(async () => {
