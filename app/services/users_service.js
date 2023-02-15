@@ -1,6 +1,7 @@
 const { extractValidFields, validateAgainstSchema } = require('../../lib/validator')
 
 const userInformationSchema = {
+    id: { required: false },
     firstName: { required: true },
     lastName: { required: true },
     email: { required: true },
