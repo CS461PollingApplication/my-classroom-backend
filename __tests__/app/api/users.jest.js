@@ -376,7 +376,8 @@ describe('/users/:userId', () => {
             lastName: 'user',
             email: 'regularuser@myclassroom.com',
             rawPassword: 'regularuserpass!',
-            confirmedPassword: 'regularuserpassword!'
+            confirmedPassword: 'regularuserpassword!',
+            emailConfirmed: true
         })
 
         admin = await db.User.create({
@@ -385,7 +386,8 @@ describe('/users/:userId', () => {
             email: 'adminuser@myclassroom.com',
             rawPassword: 'adminuserpass!',
             confirmedPassword: 'adminuserpassword!',
-            admin: true
+            admin: true,
+            emailConfirmed: true
         })
 
         userJwt = jwtUtils.encode({
@@ -428,7 +430,112 @@ describe('/users/:userId', () => {
     })
 
     describe('PUT', () => {
-        
+        it('should respond with 404 and user not found', async () => {
+            const fakeId = 123123132
+            const resp = await request(app).put(`/users/${fakeId}`).set('Authorization', `Bearer ${userJwt}`).send({
+                firstName: 'faker'
+            })
+            expect(resp.statusCode).toEqual(404)
+            expect(resp.body.error).toEqual(`User with id ${fakeId} not found`)
+        })
+
+        it('should respond with 403 and insufficient permissions', async () => {
+            const resp = await request(app).put(`/users/${user.id}`).set('Authorization', `Bearer ${adminJwt}`).send({
+                firstName: 'admintakeover'
+            })
+            expect(resp.statusCode).toEqual(403)
+            expect(resp.body.error).toEqual(`Insufficient permissions to access that resource`)
+        })
+
+        it('should respond with 400 and no fields', async () => {
+            const resp = await request(app).put(`/users/${user.id}`).set('Authorization', `Bearer ${userJwt}`).send({})
+            expect(resp.statusCode).toEqual(400)
+            expect(resp.body.error).toEqual(`Missing any valid fields to update the user: email, firstName, lastName`)
+        })
+
+        it('should respond with 400 and not empty violation for firstName', async () => {
+            const resp = await request(app).put(`/users/${user.id}`).set('Authorization', `Bearer ${userJwt}`).send({
+                firstName: ""
+            })
+            expect(resp.statusCode).toEqual(400)
+            expect(resp.body.error).toContain(`First name cannot be empty`)
+        })
+
+        it('should respond with 200 and updated information', async () => {
+            const resp = await request(app).put(`/users/${user.id}`).set('Authorization', `Bearer ${userJwt}`).send({
+                firstName: 'updated',
+                lastName: 'irregular',
+                email: 'irregularuser@myclassroom.com'
+            })
+            expect(resp.statusCode).toEqual(200)
+            expect(resp.body.user.firstName).toEqual('updated')
+            expect(resp.body.user.lastName).toEqual('irregular')
+            expect(resp.body.user.email).toEqual('irregularuser@myclassroom.com')
+            await user.reload()
+            expect(user.emailConfirmed).toEqual(false)
+            expect(user.firstName).toEqual('updated')
+            expect(user.lastName).toEqual('irregular')
+            expect(user.email).toEqual('irregularuser@myclassroom.com')
+        })
+
+        it('should respond with 400 and missing fields for password change', async () => {
+            const resp = await request(app).put(`/users/${user.id}`).set('Authorization', `Bearer ${userJwt}`).send({
+                firstName: 'updated',
+                lastName: 'irregular',
+                email: 'irregularuser@myclassroom.com',
+                oldPassword: 'regularuserpass!',
+                rawPassword: 'irregularuserpass!'
+            })
+            expect(resp.statusCode).toEqual(400)
+            expect(resp.body.error).toEqual(`Missing fields required to update password: confirmedPassword`)
+        })
+
+        it('should respond with 401 and incorrect password', async () => {
+            const resp = await request(app).put(`/users/${user.id}`).set('Authorization', `Bearer ${userJwt}`).send({
+                firstName: 'updated',
+                lastName: 'irregular',
+                email: 'irregularuser@myclassroom.com',
+                oldPassword: 'regularuserpass',
+                rawPassword: 'irregularuserpass!',
+                confirmedPassword: 'irregularuserpass!'
+            })
+            expect(resp.statusCode).toEqual(401)
+            expect(resp.body.error).toEqual(`Incorrect password. Cannot set new password.`)
+        })
+
+        it('should respond with 400 and password mismatch', async () => {
+            const resp = await request(app).put(`/users/${user.id}`).set('Authorization', `Bearer ${userJwt}`).send({
+                firstName: 'updated',
+                lastName: 'irregular',
+                email: 'irregularuser@myclassroom.com',
+                oldPassword: 'regularuserpass!',
+                rawPassword: 'irregularuserpass!',
+                confirmedPassword: 'irregularuserpass'
+            })
+            expect(resp.statusCode).toEqual(400)
+            expect(resp.body.error).toEqual(`Passwords do not match`)
+        })
+
+        it('should respond with 200 and updated information and password changed', async () => {
+            const resp = await request(app).put(`/users/${user.id}`).set('Authorization', `Bearer ${userJwt}`).send({
+                firstName: 'updater',
+                lastName: 'irregulars',
+                email: 'irregularsuser@myclassroom.com',
+                oldPassword: 'regularuserpass!',
+                rawPassword: 'irregularuserpass!',
+                confirmedPassword: 'irregularuserpass!'
+            })
+            expect(resp.statusCode).toEqual(200)
+            expect(resp.body.user.firstName).toEqual('updater')
+            expect(resp.body.user.lastName).toEqual('irregulars')
+            expect(resp.body.user.email).toEqual('irregularsuser@myclassroom.com')
+            await user.reload()
+            expect(user.emailConfirmed).toEqual(false)
+            expect(user.firstName).toEqual('updater')
+            expect(user.lastName).toEqual('irregulars')
+            expect(user.email).toEqual('irregularsuser@myclassroom.com')
+            expect(user.validatePassword('irregularuserpass!')).toEqual(true)
+        })
     })
 
     describe('DELETE', () => {

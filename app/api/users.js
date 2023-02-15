@@ -223,13 +223,36 @@ router.put('/:userId', requireAuthentication, async function (req, res, next) {
           }
         }
         let updateFields = usersService.filterUserFields(req.body)
-        if (rawPassword != null) {
-          updateFields = {
-            ...updateFields,
-            rawPassword: rawPassword
-          }
+        if (Object.keys(updateFields).length < 1) {
+          res.status(400).send({
+            error: `Missing any valid fields to update the user: email, firstName, lastName`
+          })
         }
-        await user.update(updateFields)
+        else {
+          let sendEmailConfirmation = false
+          if (updateFields.email != null && updateFields.email != user.email) {
+            sendEmailConfirmation = true
+            updateFields = {
+              ...updateFields,
+              emailConfirmed: false
+            }
+          }
+          if (rawPassword != null) {
+            updateFields = {
+              ...updateFields,
+              rawPassword: rawPassword
+            }
+          }
+          
+          await user.update(updateFields)
+          if (sendEmailConfirmation) {
+            await user.generateEmailConfirmation()
+          }
+          
+          res.status(200).send({
+            user: usersService.filterUserFields(user)
+          })
+        }
       }
       catch (e) {
           if (e instanceof ValidationError) {
@@ -239,9 +262,6 @@ router.put('/:userId', requireAuthentication, async function (req, res, next) {
             next(e)
           }
       }
-      res.status(200).send({
-        user: usersService.filterUserFields(user)
-      })
     }
     else {
       res.status(403).send({

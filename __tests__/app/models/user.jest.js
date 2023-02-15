@@ -156,12 +156,9 @@ describe("User model", () => {
         })
 
         it ("should update the email", async () => {
-            jest.clearAllMocks()
             await user.update({email: "danSmithy@myclassroom.com"})
             await expect(user.save()).resolves.toBeTruthy()
             await user.reload()
-            expect(confirmation).toHaveBeenCalledTimes(1)
-            expect(confirmation).toHaveBeenCalledWith(user)
             expect(user.email).toEqual("danSmithy@myclassroom.com")
         })
 
@@ -228,10 +225,10 @@ describe("User model", () => {
             })
         })
 
-        it ("should set the email expiration and code", () => {
+        it ("should set the email expiration and code", async () => {
             jest.clearAllMocks()
             const now = moment().utc()
-            code = user.generateEmailConfirmation()
+            code = await user.generateEmailConfirmation()
             expect(user.emailConfirmationCode).toEqual(code)
             expect(user.emailConfirmationCode).not.toBeNull()
             expect(user.emailConfirmationExpired()).toEqual(false)
