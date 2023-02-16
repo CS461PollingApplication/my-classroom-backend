@@ -5,6 +5,7 @@ describe('GET /courses', () => {
 
     let user
     let course
+    let course2
     let section
 
     it('should respond with 201 when a valid course is created and should create an enrollment', async () => {
@@ -31,6 +32,7 @@ describe('GET /courses', () => {
         //expect(resp.enrollment.userId).toEqual() **NOTE: user response does not include id
         expect(resp.body.enrollment.role).toEqual("teacher")
         expect(resp.body.enrollment.section).toBeFalsy()
+        course2 = resp.body.course
     })
 
     it('should respond with 400 for malformed request when there is no course name', async () => {
@@ -169,6 +171,15 @@ describe('GET /courses', () => {
         
         const resp = await request(app).get('/courses').set('Authorization', `Bearer ${token}`)
         expect(resp.statusCode).toEqual(200)
+        expect(resp.body.studentCourses[0].id).toEqual(course2.id)
+        expect(resp.body.studentCourses[0].name).toEqual("Litness 101")
+        expect(resp.body.studentCourses[0].description).toEqual("Wanna get lit? We'll show you how")
+        expect(resp.body.studentCourses[1].id).toEqual(course.id)
+        expect(resp.body.studentCourses[1].name).toEqual("Fitness 101")
+        expect(resp.body.studentCourses[1].description).toEqual("Wanna get fit? We'll show you how")
+        expect(resp.body.teacherCourses[0].id).toEqual(course.id)
+        expect(resp.body.teacherCourses[0].name).toEqual("Fitness 101")
+        expect(resp.body.teacherCourses[0].description).toEqual("Wanna get fit? We'll show you how")
     })
 
     it('should respond with 401 if authorization is wrong', async () => {

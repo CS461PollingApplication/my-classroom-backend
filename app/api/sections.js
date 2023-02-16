@@ -23,7 +23,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
         if (missingFields.length == 0) {
             const section = await db.Section.create(sectionToInsert)
             res.status(201).send({
-                section: section
+                section: sectionService.extractSectionFields(section)
             })
         } else {
             res.status(400).send({error: `Section did not have all the required fields, it was missing ${missingFields}`})

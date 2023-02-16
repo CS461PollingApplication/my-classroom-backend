@@ -34,9 +34,10 @@ router.get('/', requireAuthentication, async function (req, res) {
             }
         ]
     })
+
     res.status(200).send({
-        studentCourses : studentCourses,
-        teacherCourses : teacherCourses
+        studentCourses : courseService.extractArrayCourseFields(studentCourses),
+        teacherCourses : courseService.extractArrayCourseFields(teacherCourses)
     })
 
 })
@@ -63,8 +64,8 @@ router.post('/', requireAuthentication, async function (req, res) {
         if (missingFields.length == 0) {
             const enrollment = await db.Enrollment.create(enrollmentToInsert)
             res.status(201).send({
-                course: course,
-                enrollment: enrollment
+                course: courseService.extractCourseFields(course),
+                enrollment: enrollmentService.extractEnrollmentFields(enrollment)
             })
         } else {
             res.status(400).send({error: `Enrollment did not have all the required fields, it was missing ${missingFields}`})
@@ -100,8 +101,8 @@ router.post('/join', requireAuthentication, async function (req, res) {
             if (missingFields.length == 0) {
                 const enrollment = await db.Enrollment.create(enrollmentToInsert)
                 res.status(201).send({
-                    section: section,
-                    enrollment: enrollment
+                    section: sectionService.extractSectionFields(section),
+                    enrollment: enrollmentService.extractEnrollmentFields(enrollment)
                 })
             } else {
                 res.status(400).send({error: `Enrollment did not have all the required fields, it was missing ${missingFields}`})
