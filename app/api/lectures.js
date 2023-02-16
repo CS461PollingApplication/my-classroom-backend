@@ -4,6 +4,7 @@ const { requireAuthentication } = require('../../lib/auth')
 
 // base path: /courses/:course_id/lectures
 
+// get user's enrollment from using their id and current courseId
 async function getEnrollmentFromCourse(userId, courseId) {
     return await db.Enrollment.findOne({
         where: {
@@ -13,6 +14,10 @@ async function getEnrollmentFromCourse(userId, courseId) {
     })
 }
 
+// given a courseId, find all related sections and get the
+// enrollments of those sections from current user (primarily
+// used to get the enrollment of a student bc students cannot 
+// enrolled at course level)
 async function getEnrollmentFromSectionInCourse(userId, courseId) {
     return await db.Enrollment.findOne({
         where: {
@@ -34,6 +39,7 @@ async function getLecture(lectureId) {
     })
 }
 
+// return the section ids from a course
 async function getSectionsIdsFromCourse(courseId) {
     const found_sections = await db.Section.findAll({
         where: { courseId: courseId },
@@ -136,7 +142,7 @@ router.put('/:lecture_id', requireAuthentication, async function (req, res) {
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
     const lecture = await getLecture(lectureId)
     
-    if (lecture == null) {
+    if (lecture == null) {  // if passed in lectureId does not exist
         res.status(404).send({error: "Lecture of this id does not exist"})
         return
     }
@@ -144,10 +150,9 @@ router.put('/:lecture_id', requireAuthentication, async function (req, res) {
         res.status(403).send()
     }
     else if (enrollment.role == 'teacher') {
-        updatedLec = req.body
         try {
             await db.Lecture.update(
-                updatedLec,     // provided body from request
+                req.body,     // provided body from request
                 { where: { id: lectureId } }
             )
         }
@@ -174,13 +179,13 @@ router.get('/:lecture_id', requireAuthentication, async function (req, res) {
         res.status(403).send()
         return
     }
-    else if (lecture == null) {
+    else if (lecture == null) {      // if passed in lectureId does not exist
         res.status(404).send({error: "Lecture of this id does not exist"})
         return
     }
     else if (enrollment.role == 'teacher') {     // if teacher, send lecture info & all related questions
         try {
-            full_response['lecture'] = lecture
+            full_response['lecture'] = lecture  // full_response will hold wanted lecture along with its related questions in the end
             const questions_in_lec = await db.sequelize.query(  // raw sql query to get all questions in this lecture using `QuestionInLecture`
                 `SELECT q.* FROM Questions q INNER JOIN QuestionInLectures ql ON q.id = ql.questionId INNER JOIN Lectures l ON ql.lectureId = l.id WHERE l.id = ${lectureId}`,
                 {
@@ -209,7 +214,7 @@ router.get('/:lecture_id', requireAuthentication, async function (req, res) {
                 full_response['lecture'] = lecture
     
                 const questions_in_lec = await db.sequelize.query(  // raw sql query to get all published questions in this lecture using `QuestionInLecture`
-                    `SELECT DISTINCT q.* FROM Questions q INNER JOIN QuestionInLectures ql ON q.id = ql.questionId INNER JOIN Lectures l ON ql.lectureId = l.id WHERE ql.published = 1 AND l.id = ${lectureId}`
+                    `SELECT q.* FROM Questions q INNER JOIN QuestionInLectures ql ON q.id = ql.questionId INNER JOIN Lectures l ON ql.lectureId = l.id WHERE ql.published = 1 AND l.id = ${lectureId}`
                 )
                 full_response['questions'] = questions_in_lec[0]    // index 0, because query above returns 2 duplicate instances of result
             }
@@ -230,7 +235,7 @@ router.delete('/:lecture_id', requireAuthentication, async function (req, res) {
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
     const lecture = await getLecture(lectureId)
     
-    if (lecture == null) {
+    if (lecture == null) {   // if passed in lectureId does not exist
         res.status(204).send({error: "This lecture does not exist already"})
         return
     }

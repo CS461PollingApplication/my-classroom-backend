@@ -11,6 +11,7 @@ async function getUserFromEmail(email) {
 }
 
 describe('Test api/lecture.js request handlers', () => {
+    // declare test objects in this scope, to be used throughout the tests
     let course, course_published, section1, section2, 
     teacher_resp, teacher, teacherToken, student_resp, 
     student, studentToken, unrelated_resp, unrelated,
@@ -147,7 +148,7 @@ describe('Test api/lecture.js request handlers', () => {
     
         it('should respond 204 for a student in unpublished course', async () => {
             const resp = await request(app).get(`/courses/${course.id}/lectures`).set('Authorization', `Bearer ${studentToken}`)
-            
+
             expect(resp.statusCode).toEqual(204)
         })
 
@@ -192,6 +193,7 @@ describe('Test api/lecture.js request handlers', () => {
                 title: "fresh lec",
                 description: "just another lecture"
             }).set('Authorization', `Bearer waytoobadtoken`)            
+            
             expect(resp.statusCode).toEqual(401)
         })
 
@@ -209,6 +211,7 @@ describe('Test api/lecture.js request handlers', () => {
                 title: "fresh lec",
                 description: "just another lecture"
             }).set('Authorization', `Bearer ${studentToken}`)            
+            
             expect(resp.statusCode).toEqual(403)
         })
 
@@ -235,16 +238,19 @@ describe('Test api/lecture.js request handlers', () => {
     describe('GET /courses/:course_id/lectures/:lecture_id', () => {
         it('should respond with 401 for bad authorization token', async () => {
             const resp = await request(app).get(`/courses/${course.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer waytoobadtoken`)            
+            
             expect(resp.statusCode).toEqual(401)
         })
 
         it('should respond with 403 for someone who is not in course', async () => {
             const resp = await request(app).get(`/courses/${course.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer ${unrelatedToken}`)                    
+            
             expect(resp.statusCode).toEqual(403)
         })
 
         it('should respond with 200 and corresponding info for teacher', async () => {
             const resp = await request(app).get(`/courses/${course.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer ${teacherToken}`)                    
+            
             expect(resp.statusCode).toEqual(200)
             expect(resp.body.lecture.id).toEqual(lecture1.id)
             expect(resp.body.lecture.courseId).toEqual(course.id)
@@ -254,11 +260,13 @@ describe('Test api/lecture.js request handlers', () => {
 
         it('should respond with 404 for student in unpublished lecture in section', async () => {
             const resp = await request(app).get(`/courses/${course.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer ${studentToken}`)
+            
             expect(resp.statusCode).toEqual(404)
         })
 
         it('should respond with 200, lecture info, and ONE question info for student in published lecture with one published question', async () => {
             const resp = await request(app).get(`/courses/${course_published.id}/lectures/${lecture2.id}`).set('Authorization', `Bearer ${studentToken}`)
+            
             expect(resp.statusCode).toEqual(200)
             expect(resp.body.questions.length).toEqual(1)   // only 1 published question in this lecture
             expect(resp.body.questions[0].id).toEqual(question1.id)
@@ -266,12 +274,14 @@ describe('Test api/lecture.js request handlers', () => {
 
         it('should respond with 200, lecture info, and ZERO questions for student in published lecture but no published questions', async () => {
             const resp = await request(app).get(`/courses/${course_published.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer ${studentToken}`)
+            
             expect(resp.statusCode).toEqual(200)
             expect(resp.body.questions.length).toEqual(0)   // 0 published question in this lecture
         })
 
         it('should respond with 404 if lecture does not exist', async () => {
             const resp = await request(app).get(`/courses/${course.id}/lectures/${-1}`).set('Authorization', `Bearer ${teacherToken}`)
+            
             expect(resp.statusCode).toEqual(404)
         })
     })
@@ -298,17 +308,20 @@ describe('Test api/lecture.js request handlers', () => {
             const resp = await request(app).put(`/courses/${course.id}/lectures/${lecture1.id}`).send({
                 description: new_desc
             }).set('Authorization', `Bearer ${teacherToken}`)            
+            
             expect(resp.statusCode).toEqual(200)
 
             // check if lecture was updated
             const check_lec = await db.Lecture.findOne({
                 where: { id: lecture1.id }
             })           
+            
             expect(check_lec.description).toEqual(new_desc)         
         })
 
         it('should respond with 404 if lecture does not exist', async () => {
             const resp = await request(app).put(`/courses/${course.id}/lectures/${-1}`).set('Authorization', `Bearer ${teacherToken}`)
+            
             expect(resp.statusCode).toEqual(404)
         })
     })
@@ -316,21 +329,25 @@ describe('Test api/lecture.js request handlers', () => {
     describe('DELETE /courses/:course_id/lectures/:lecture_id', () => {
         it('should respond with 401 for bad authorization token', async () => {
             const resp = await request(app).delete(`/courses/${course.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer waytoobadtoken`)            
+            
             expect(resp.statusCode).toEqual(401)
         })
 
         it('should respond with 403 for someone who is not in course', async () => {
             const resp = await request(app).delete(`/courses/${course.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer ${unrelatedToken}`)                    
+            
             expect(resp.statusCode).toEqual(403)
         })
 
         it('should respond with 204 if lecture does not exist (or is already deleted)', async () => {
             const resp = await request(app).delete(`/courses/${course.id}/lectures/${-1}`).set('Authorization', `Bearer ${teacherToken}`)
+            
             expect(resp.statusCode).toEqual(204)
         })
         
         it('should respond with 403 for a non-teacher', async () => {
             const resp = await request(app).delete(`/courses/${course.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer ${studentToken}`)                    
+            
             expect(resp.statusCode).toEqual(403)
         })
 
@@ -350,6 +367,7 @@ describe('Test api/lecture.js request handlers', () => {
             })
             expect(check_qs_lec_relation.length).toEqual(0)
 
+            // check if lecture-section relationships are deleted
             const check_lec_sect_relation = await db.LectureForSection.findAll({
                 where: { lectureId: lecture1.id },
             })
