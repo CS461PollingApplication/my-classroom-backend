@@ -53,8 +53,8 @@ async function getSectionLectureRelation (lectureId, sectiondId) {
             lectureId: lectureId,
             sectionId: sectiondId
         }
-    }
-)}
+    })
+}
 
 // get all lecture objects for the current course
 router.get('/', requireAuthentication, async function (req, res) {
@@ -101,7 +101,6 @@ router.post('/', requireAuthentication, async function (req, res) {
             lecture = await db.Lecture.create(newLec)
         }
         catch (e) {
-            // TODO: send back better error msg using exception 'e' (/lib/string_helpers.js - serializeSequelizeErrors())
             res.status(400).send({error: "Unable to create lecture object"})
             return
         }
@@ -114,13 +113,12 @@ router.post('/', requireAuthentication, async function (req, res) {
                 await db.LectureForSection.create({
                     lectureId: lecture.id,
                     sectionId: sectionIds[i]
-                    // TODO: currently no other fields are being added here
+                    // TODO: no other fields are being added here
                     // ...should it be added here, or in /:section_id/lectures ?
                 })
             }
         }
         catch (e) {
-            // TODO: send back better error msg using exception 'e' (/lib/string_helpers.js - serializeSequelizeErrors())
             res.status(400).send({error: "Unable to create association between lecture & this course' sections"})
             return
         }
@@ -134,26 +132,30 @@ router.post('/', requireAuthentication, async function (req, res) {
 router.put('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const lectureId = req.params.lecture_id
+    const courseId = req.params.course_id
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
-    var lecture     // will hold the updated lecture object from database
-
-    if (enrollment == null) {   // if user is not enrolled in this course
+    const lecture = await getLecture(lectureId)
+    
+    if (lecture == null) {
+        res.status(404).send({error: "Lecture of this id does not exist"})
+        return
+    }
+    else if (enrollment == null) {   // if user is not enrolled in this course
         res.status(403).send()
     }
     else if (enrollment.role == 'teacher') {
         updatedLec = req.body
         try {
-            ret_obj = await db.Lecture.update(
+            await db.Lecture.update(
                 updatedLec,     // provided body from request
-                { where: { id: lectureId }, returning: true }
+                { where: { id: lectureId } }
             )
-            lecture = ret_obj[1]    // index-1 of return holds the updated lecture
         }
         catch (e) {
-            // TODO: send back better error msg using exception 'e' (/lib/string_helpers.js - serializeSequelizeErrors())
             res.status(400).send({error: "Unable to update lecture object"})
+            return
         }
-        res.status(200).json(lecture)   // all good, return updated lecture object
+        res.status(200).send()   // all good, return updated lecture object
     }
     else {      // if user is not a teacher
         res.status(403).send()
@@ -163,49 +165,58 @@ router.put('/:lecture_id', requireAuthentication, async function (req, res) {
 router.get('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const lectureId = req.params.lecture_id
+    const courseId = req.params.course_id
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
+    const lecture = await getLecture(lectureId)
     var full_response = {}  // will hold response with lecture info and related questions
 
     if (enrollment == null) {   // if user is not enrolled in this course
         res.status(403).send()
+        return
+    }
+    else if (lecture == null) {
+        res.status(404).send({error: "Lecture of this id does not exist"})
+        return
     }
     else if (enrollment.role == 'teacher') {     // if teacher, send lecture info & all related questions
         try {
-            const lecture = await getLecture(lectureId)
-            full_response.push(lecture)
-
+            full_response['lecture'] = lecture
             const questions_in_lec = await db.sequelize.query(  // raw sql query to get all questions in this lecture using `QuestionInLecture`
-                'SELECT q.* FROM Question q INNER JOIN QuestionInLecture ql ON q.id = ql.questionId INNER JOIN Lecture l ON ql.lectureId = l.id'
+                `SELECT q.* FROM Questions q INNER JOIN QuestionInLectures ql ON q.id = ql.questionId INNER JOIN Lectures l ON ql.lectureId = l.id WHERE l.id = ${lectureId}`,
+                {
+                    type: db.sequelize.QueryTypes.SELECT
+                }
             )
-            full_response.push(questions_in_lec)
+            full_response['questions'] = questions_in_lec
         }
         catch (e) {
-            // TODO: send back better error msg using exception 'e' (/lib/string_helpers.js - serializeSequelizeErrors())
             res.status(400).send({error: "Unable to get lecture or questions"})
+            return
         }
         res.status(200).send(full_response)
     }
     else {  // if student, only send published info
-        sectionLectureRelation = await getSectionLectureRelation(lectureId, enrollment.sectionId)
-        if (!sectionLectureRelation.published) {    // if this lecture (from user's section) isn't published
-            res.send(404).send()
+        let sectionLectureRelation = await getSectionLectureRelation(lectureId, enrollment.sectionId)
+        if (sectionLectureRelation == null) {
+            res.status(404).send({error: "This lecture does not exist in your section"})
+        }
+        else if (!sectionLectureRelation.published) {    // if this lecture (from user's section) isn't published
+            res.status(404).send({error: "This lecture is not yet published"})
         }
         else {  // if this lecture (from user's section) is published
             try {
                 const lecture = await getLecture(lectureId)
-                full_response.push(lecture)
+                full_response['lecture'] = lecture
     
                 const questions_in_lec = await db.sequelize.query(  // raw sql query to get all published questions in this lecture using `QuestionInLecture`
-                    'SELECT q.* FROM Question q INNER JOIN QuestionInLecture ql ON q.id = ql.questionId INNER JOIN Lecture l ON ql.lectureId = l.id WHERE ql.published = 1'
+                    `SELECT DISTINCT q.* FROM Questions q INNER JOIN QuestionInLectures ql ON q.id = ql.questionId INNER JOIN Lectures l ON ql.lectureId = l.id WHERE ql.published = 1 AND l.id = ${lectureId}`
                 )
-                full_response.push(questions_in_lec)
+                full_response['questions'] = questions_in_lec[0]    // index 0, because query above returns 2 duplicate instances of result
             }
             catch (e) {
-                // TODO: send back better error msg using exception 'e' (/lib/string_helpers.js - serializeSequelizeErrors())
                 res.status(400).send({error: "Unable to get lecture or questions"})
+                return
             }
-            // TODO: add check if lecture has ever been published in the past? is there a database field to check that?
-            // TODO: add check if the full_response is empty
             res.status(200).json(full_response)   // all good, return updated lecture object
         }
     }
@@ -215,13 +226,21 @@ router.get('/:lecture_id', requireAuthentication, async function (req, res) {
 router.delete('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const lectureId = req.params.lecture_id
-    let enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
-
-    if (enrollment == null) {   // if user is not enrolled in this course
+    const courseId = req.params.course_id
+    const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
+    const lecture = await getLecture(lectureId)
+    
+    if (lecture == null) {
+        res.status(204).send({error: "This lecture does not exist already"})
+        return
+    }
+    else if (enrollment == null) {   // if user is not enrolled in this course
         res.status(403).send()
+        return
     }
     else if (enrollment.role != 'teacher') {
         res.status(403).send()
+        return
     }
     else {  // if user is a teacher
         try {
@@ -242,8 +261,10 @@ router.delete('/:lecture_id', requireAuthentication, async function (req, res) {
             })
         }
         catch (e) {
-            res.status(500).send()
+            res.status(400).send({error: "Unable to delete lecture"})
+            return
         }
+        res.status(200).send()
     }
 })
 
