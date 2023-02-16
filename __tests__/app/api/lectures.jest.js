@@ -13,11 +13,11 @@ async function getUserFromEmail(email) {
 describe('Test api/lecture.js request handlers', () => {
     let course, course_published, section1, section2, 
     teacher_resp, teacher, teacherToken, student_resp, 
-    student, studentToken, unrelated_resp, unrelated, 
-    unrelatedToken, enrollment1, enrollment2, enrollment3, 
+    student, studentToken, unrelated_resp,
+    unrelatedToken, enrollment1, enrollment2, 
     lecture1, lecture2, lec1_sec1, lec1_sec2, lec2_sec1, 
-    lec2_sec2, question1, q1_lec1, question2, q1_lec2, 
-    q2_lec2
+    lec2_sec2, question1, q1_lec1, question2, q2_lec2,
+    q1_lec2, enrollment3
     
     beforeAll(async () => {
         // create sample models for tests
@@ -25,25 +25,21 @@ describe('Test api/lecture.js request handlers', () => {
             name: 'Capstone Course',
             description: 'Exploited labor'
         })
-
         course_published = await db.Course.create({
             name: 'Databases',
             description: 'SQL, just SQL',
             published: true
         })
-
         section1 = await db.Section.create({
             number: 1,
             joinCode: "xyz123",
             courseId: course.id
         })
-
         section2 = await db.Section.create({
             number: 2,
             joinCode: "abc789",
             courseId: course_published.id
         })
-
         teacher_resp = await request(app).post('/users').send({
             firstName: 'Dan',
             lastName: 'Smith',
@@ -53,7 +49,6 @@ describe('Test api/lecture.js request handlers', () => {
         })
         teacher = await getUserFromEmail(teacher_resp.body.user.email)  // used to get ID
         teacherToken = teacher_resp.body.token
-        
         student_resp = await request(app).post('/users').send({
             firstName: 'John',
             lastName: 'Doe',
@@ -63,7 +58,6 @@ describe('Test api/lecture.js request handlers', () => {
         })
         student = await getUserFromEmail(student_resp.body.user.email)  // used to get ID
         studentToken = student_resp.body.token
-        
         unrelated_resp = await request(app).post('/users').send({
             firstName: 'Software',
             lastName: 'Engineer',
@@ -71,9 +65,7 @@ describe('Test api/lecture.js request handlers', () => {
             rawPassword: 'secretpassword45',
             confirmedPassword: 'secretpassword45'
         })
-        unrelated = await getUserFromEmail(unrelated_resp.body.user.email)  // used to get ID
         unrelatedToken = unrelated_resp.body.token
-
         enrollment1 = await db.Enrollment.create({
             role: "teacher",
             courseId: course.id,
@@ -89,7 +81,6 @@ describe('Test api/lecture.js request handlers', () => {
             sectionId: section2.id,
             userId: student.id
         })
-
         lecture1 = await db.Lecture.create({
             title: 'question set 1',
             order: 1,
@@ -102,7 +93,6 @@ describe('Test api/lecture.js request handlers', () => {
             description: 'intermediate qs',
             courseId: course_published.id
         })
-
         question1 = await db.Question.create({
             courseId: course.id,
             type: "multiple choice",
@@ -114,6 +104,7 @@ describe('Test api/lecture.js request handlers', () => {
             stem: "but why",
         })
 
+        // create relationships for sample models
         q1_lec1 = await db.QuestionInLecture.create({
             questionId: question1.id,
             lectureId: lecture1.id,
@@ -128,9 +119,7 @@ describe('Test api/lecture.js request handlers', () => {
             questionId: question2.id,
             lectureId: lecture2.id,
             published: false
-        })      
-
-        // create relationship entries for sample models
+        })
         lec1_sec1 = await db.LectureForSection.create({
             lectureId: lecture1.id,
             sectionId: section1.id,
@@ -151,51 +140,6 @@ describe('Test api/lecture.js request handlers', () => {
             sectionId: section2.id,
             published: true
         })
-
-
-        // const question1 = await db.Question.create({
-        //     type: 'multiple choice',
-        //     stem: 'What is 1 + 2?',
-        //     content: {
-        //         options: {
-        //             0: 2,
-        //             1: 3,
-        //             2: 4,
-        //             3: 5
-        //         }
-        //     },
-        //     answers: {
-        //         0: false,
-        //         1: true,
-        //         2: false,
-        //         3: false
-        //     },
-        //     courseId: course.id
-        // })
-        // const question2 = await db.Question.create({
-        //     type: 'multiple choice',
-        //     stem: 'What is 5 + 5?',
-        //     content: {
-        //         options: {
-        //             0: 5,
-        //             1: 6,
-        //             2: 7,
-        //             3: 10
-        //         }
-        //     },
-        //     answers: {
-        //         0: false,
-        //         1: false,
-        //         2: false,
-        //         3: true
-        //     },
-        //     courseId: course.id
-        // })
-        // const enrollment2 = await db.Enrollment.create({
-        //     role: "student",
-        //     courseId: course.id,
-        //     userId: student.id
-        // })
     })
 
     describe('GET /courses/:course_id/lectures', () => {
@@ -422,6 +366,7 @@ describe('Test api/lecture.js request handlers', () => {
         await unrelated_resp.destroy()
         await enrollment1.destroy()
         await enrollment2.destroy()
+        await enrollment3.destroy()
         await lecture1.destroy()
         await lecture2.destroy()
         await lec1_sec1.destroy()
@@ -429,6 +374,9 @@ describe('Test api/lecture.js request handlers', () => {
         await lec2_sec1.destroy()
         await lec2_sec2.destroy()
         await question1.destroy()
+        await question2.destroy()
         await q1_lec1.destroy()
+        await q2_lec2.destroy()
+        await q1_lec2.destroy()
     })
 })
