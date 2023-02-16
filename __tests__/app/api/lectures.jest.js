@@ -13,7 +13,7 @@ async function getUserFromEmail(email) {
 describe('Test api/lecture.js request handlers', () => {
     let course, course_published, section1, section2, 
     teacher_resp, teacher, teacherToken, student_resp, 
-    student, studentToken, unrelated_resp,
+    student, studentToken, unrelated_resp, unrelated,
     unrelatedToken, enrollment1, enrollment2, 
     lecture1, lecture2, lec1_sec1, lec1_sec2, lec2_sec1, 
     lec2_sec2, question1, q1_lec1, question2, q2_lec2,
@@ -65,6 +65,7 @@ describe('Test api/lecture.js request handlers', () => {
             rawPassword: 'secretpassword45',
             confirmedPassword: 'secretpassword45'
         })
+        unrelated = await getUserFromEmail(unrelated_resp.body.user.email)
         unrelatedToken = unrelated_resp.body.token
         enrollment1 = await db.Enrollment.create({
             role: "teacher",
@@ -361,9 +362,9 @@ describe('Test api/lecture.js request handlers', () => {
         await course_published.destroy()
         await section1.destroy()
         await section2.destroy()
-        await teacher_resp.destroy()
-        await student_resp.destroy()
-        await unrelated_resp.destroy()
+        await teacher.destroy()
+        await student.destroy()
+        await unrelated.destroy()
         await enrollment1.destroy()
         await enrollment2.destroy()
         await enrollment3.destroy()
