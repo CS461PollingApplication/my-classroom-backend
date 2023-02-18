@@ -303,4 +303,60 @@ router.delete('/:userId', requireAuthentication, async function (req, res, next)
   }
 })
 
+router.put('/:userId/confirm', requireAuthentication, async function (req, res, next) {
+  const userId = req.params.userId
+  const user = await db.User.findByPk(userId)
+  if (user != null) {
+    if (userId == req.payload.sub) {
+      const emailConfirmationCode = req.body.emailConfirmationCode
+      if (emailConfirmationCode != null) {
+        try {
+          if (user.emailConfirmed) {
+            res.status(400).send({
+              error: `email already confirmed`
+            })
+          }
+          else {
+            if (user.emailConfirmationExpired()) {
+              user.generateEmailConfirmation()
+              res.status(400).send({
+                error: `emailConfirmationCode expired. A new code should have been emailed.`
+              })
+            }
+            else {
+              const emailConfirmed = await user.validateEmailConfirmation(emailConfirmationCode)
+              if (emailConfirmed) {
+                res.status(204).send()
+              }
+              else {
+                res.status(401).send({
+                  error: `emailConfirmationCode incorrect`
+                })
+              }
+            }
+          }
+        }
+        catch (e) {
+          next(e)
+        }
+      }
+      else {
+        res.status(400).send({
+          error: `emailConfirmationCode required`
+        })
+      }
+    }
+    else {
+      res.status(403).send({
+        error: `Insufficient permissions to access that resource`
+      })
+    }
+  }
+  else {
+    res.status(404).send({
+      error: `User with id ${userId} not found`
+    })
+  }
+})
+
 module.exports = router

@@ -237,14 +237,16 @@ describe("User model", () => {
             expect(confirmation).toHaveBeenCalledWith(user)
         })
 
-        it ("should validate that the email confirmation is correct", () => {
-            expect(user.validateEmailConfirmation(code)).toEqual(true)
+        it ("should validate that the email confirmation is correct", async () => {
+            const confirmed = await user.validateEmailConfirmation(code)
+            expect(confirmed).toEqual(true)
             expect(user.emailConfirmationExpired()).toEqual(false)
             expect(user.emailConfirmed).toEqual(true)
         })
 
-        it ("should invalidate the email confirmation because of incorrect code", () => {
-            expect(user.validateEmailConfirmation('A12345')).toEqual(false)
+        it ("should invalidate the email confirmation because of incorrect code", async () => {
+            const confirmed = await user.validateEmailConfirmation('A12345')
+            expect(confirmed).toEqual(false)
             expect(user.emailConfirmationExpired()).toEqual(false)
             expect(user.emailConfirmed).toEqual(false)
         })

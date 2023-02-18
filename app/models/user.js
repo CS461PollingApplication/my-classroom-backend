@@ -169,8 +169,9 @@ module.exports = (sequelize, DataTypes) => {
         return !moment().utc().isBefore(moment(this.emailConfirmationExpiresAt))
     }
 
-    User.prototype.validateEmailConfirmation = function (code) {
-        this.emailConfirmed = code == this.emailConfirmationCode
+    User.prototype.validateEmailConfirmation = async function (code) {
+        this.emailConfirmed = (code == this.emailConfirmationCode)
+        await this.save()
         return this.emailConfirmed
     }
 
