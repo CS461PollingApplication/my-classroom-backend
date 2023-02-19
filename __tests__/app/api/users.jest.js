@@ -633,6 +633,67 @@ describe('/users/:userId', () => {
         })
     })
 
+    describe('GET /confirm', () => {
+
+        let user
+        let admin
+        let userJwt
+        let adminJwt
+
+        beforeAll(async () => {
+            user = await db.User.create({
+                firstName: 'regular',
+                lastName: 'user',
+                email: 'regularuser3@myclassroom.com',
+                rawPassword: 'regularuserpass!',
+                confirmedPassword: 'regularuserpassword!'
+            })
+    
+            admin = await db.User.create({
+                firstName: 'admin',
+                lastName: 'user',
+                email: 'adminuser3@myclassroom.com',
+                rawPassword: 'adminuserpass!',
+                confirmedPassword: 'adminuserpassword!',
+                admin: true
+            })
+    
+            userJwt = jwtUtils.encode({
+                sub: user.id
+            })
+            adminJwt = jwtUtils.encode({
+                sub: admin.id
+            })
+        })
+
+        it('should respond with 404 and user not found', async () => {
+            const resp = await request(app).get(`/users/${12345}/confirm`).set('Authorization', `Bearer ${userJwt}`).send()
+            expect(resp.statusCode).toEqual(404)
+            expect(resp.body.error).toEqual(`User with id 12345 not found`)
+        })
+
+        it('should respond with 403 and insufficient permissions', async () => {
+            const resp = await request(app).get(`/users/${admin.id}/confirm`).set('Authorization', `Bearer ${userJwt}`).send()
+            expect(resp.statusCode).toEqual(403)
+            expect(resp.body.error).toEqual(`Insufficient permissions to access that resource`)
+        })
+
+        it('should respond with 204', async () => {
+            const emailConfirmationCode = user.emailConfirmationCode
+            const resp = await request(app).get(`/users/${user.id}/confirm`).set('Authorization', `Bearer ${userJwt}`).send()
+            expect(resp.statusCode).toEqual(204)
+            await user.reload()
+            expect(user.emailConfirmationCode).not.toEqual(emailConfirmationCode)
+        })
+
+        it('should respond with 400 and email already confirmed', async () => {
+            await user.update({emailConfirmed: true})
+            const resp = await request(app).get(`/users/${user.id}/confirm`).set('Authorization', `Bearer ${userJwt}`).send()
+            expect(resp.statusCode).toEqual(400)
+            expect(resp.body.error).toEqual(`email already confirmed`)
+        })
+    })
+
     describe('DELETE', () => {
         it('should respond with 404 and user not found', async () => {
             const fakeId = 123123132

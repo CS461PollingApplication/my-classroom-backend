@@ -360,4 +360,37 @@ router.put('/:userId/confirm', requireAuthentication, async function (req, res, 
   }
 })
 
+router.get('/:userId/confirm', requireAuthentication, async function (req, res, next) {
+  const userId = req.params.userId
+  const user = await db.User.findByPk(userId)
+  if (user != null) {
+    if (userId == req.payload.sub) {
+      if (user.emailConfirmed) {
+        res.status(400).send({
+          error: `email already confirmed`
+        })
+      }
+      else {
+        try {
+          await user.generateEmailConfirmation()
+          res.status(204).send()
+        }
+        catch (e) {
+          next(e)
+        }
+      }
+    }
+    else {
+      res.status(403).send({
+        error: `Insufficient permissions to access that resource`
+      })
+    }
+  }
+  else {
+    res.status(404).send({
+      error: `User with id ${userId} not found`
+    })
+  }
+})
+
 module.exports = router
