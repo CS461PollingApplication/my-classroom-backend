@@ -73,5 +73,10 @@ module.exports = (sequelize, DataTypes) => {
         }
     })
 
+    QuestionInLecture.associate = (models) => {
+        QuestionInLecture.belongsTo(models.Question)
+        QuestionInLecture.belongsTo(models.Lecture)
+    }
+
     return QuestionInLecture
 }
