@@ -144,6 +144,7 @@ module.exports = (sequelize, DataTypes) => {
 
     User.associate = (models) => {
         User.hasMany(models.Session)
+        User.hasMany(models.Enrollment)
     }
 
     // function prototype that can be used to validate the password supplied for authentication
