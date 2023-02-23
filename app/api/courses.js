@@ -7,6 +7,7 @@ const sectionService = require('../services/section_service')
 const { requireAuthentication } = require('../../lib/auth')
 
 router.use('/', require('./sections'))
+router.use('/', require('./course_id'))
 
 //GET request from /courses homepage
 router.get('/', requireAuthentication, async function (req, res) {
