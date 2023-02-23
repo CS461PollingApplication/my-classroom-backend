@@ -51,7 +51,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
             res.status(400).send({error: `Request did not contain required fields to create a section`})
         }
         else if (req.body.number) {
-            res.status(403).send({error: `User does not have the credentials to add a section`})
+            res.status(403).send({error: `Only the teacher for a course can create a section`})
         }
         else {
             res.status(400).send({error: `Request did not contain required fields to create a section and user does not have credentials to do so anyways`})
