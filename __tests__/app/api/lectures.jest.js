@@ -319,6 +319,24 @@ describe('Test api/lecture.js request handlers', () => {
             expect(check_lec.description).toEqual(new_desc)         
         })
 
+        it('should respond with 200 for successful update but should not update the course id', async () => {     
+            let new_desc = "even newer lecture"
+            const resp = await request(app).put(`/courses/${course.id}/lectures/${lecture1.id}`).send({
+                description: new_desc,
+                courseId: course.id + 5
+            }).set('Authorization', `Bearer ${teacherToken}`)            
+            
+            expect(resp.statusCode).toEqual(200)
+
+            // check if lecture was updated
+            const check_lec = await db.Lecture.findOne({
+                where: { id: lecture1.id }
+            })           
+            
+            expect(check_lec.description).toEqual(new_desc) 
+            expect(check_lec.courseId).toEqual(course.id)   // should be same course id as before, despite trying to update it       
+        })
+
         it('should respond with 404 if lecture does not exist', async () => {
             const resp = await request(app).put(`/courses/${course.id}/lectures/${-1}`).set('Authorization', `Bearer ${teacherToken}`)
             
@@ -351,9 +369,9 @@ describe('Test api/lecture.js request handlers', () => {
             expect(resp.statusCode).toEqual(403)
         })
 
-        it('should delete the lecture, all relationships to this lecture, and return 200 upon successful delete', async () => {      
+        it('should delete the lecture, all relationships to this lecture, and return 204 upon successful delete', async () => {      
             const resp = await request(app).delete(`/courses/${course.id}/lectures/${lecture1.id}`).set('Authorization', `Bearer ${teacherToken}`)                    
-            expect(resp.statusCode).toEqual(200)
+            expect(resp.statusCode).toEqual(204)
 
             // check if lecture is deleted
             const check_lec_exists = await db.Lecture.findAll({
