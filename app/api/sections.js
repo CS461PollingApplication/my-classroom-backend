@@ -1,35 +1,61 @@
 const { Router } = require('express')
 const router = Router()
 
-const course = require('../models/course')
 const db = require('../models/index')
 const { logger } = require('../../lib/logger')
-const courseService = require('../services/course_service')
-const enrollmentService = require('../services/enrollment_service')
 const sectionService = require('../services/section_service')
-const { generateUserAuthToken, requireAuthentication } = require('../../lib/auth')
-const e = require('express')
+const { requireAuthentication, generateOTP } = require('../../lib/auth')
+const { ValidationError, UniqueConstraintError } = require('sequelize')
 
 router.post('/:course_id/sections', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
+    // make sure the user creating this section is the teacher for the course
+    const enrollment = await db.Enrollment.findOne({
+        where: { 
+            userId: user.id,
+            courseId: parseInt(req.params['course_id']),
+            role: 'teacher'
+        }
+    })
 
-    if (req.body.courseId && req.body.number && req.body.joinCode) {
+    if (req.body.number && enrollment) {   // req.body.number not required as it will be auto incremented if not present
         const sectionToInsert = {
             courseId: parseInt(req.params['course_id']),
-            number: req.body.number,
-            joinCode: req.body.joinCode
+            number: req.body.number
         }
-        const missingFields = sectionService.validateSectionCreationRequest(sectionToInsert)
-        if (missingFields.length == 0) {
+        try {
             const section = await db.Section.create(sectionToInsert)
             res.status(201).send({
                 section: sectionService.extractSectionFields(section)
             })
-        } else {
-            res.status(400).send({error: `Section did not have all the required fields, it was missing ${missingFields}`})
+        } catch (e) {
+            if (e instanceof ValidationError) {
+                // this will happen if a randomly generated join code is not unique
+                logger.error(e)
+                res.status(500).send({
+                    error: "An unexpected arror occured. Please try again"
+                })
+            }
+            else if (e instanceof UniqueConstraintError) {
+                res.status(400).send({
+                    error: "A section for this course with this section number already exists"
+                })
+            }
+            else {
+                logger.error(e)
+                res.status(500).send({error: "An unexpected error occured. Please try again"})
+            }
         }
     } else {
-        res.status(400).send({error: `Request did not contain required fields to create a section`})
+        if (enrollment) {
+            res.status(400).send({error: `Request did not contain required fields to create a section`})
+        }
+        else if (req.body.number) {
+            res.status(403).send({error: `User does not have the credentials to add a section`})
+        }
+        else {
+            res.status(400).send({error: `Request did not contain required fields to create a section and user does not have credentials to do so anyways`})
+        }
     }
 })
 

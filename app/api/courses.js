@@ -1,19 +1,15 @@
 const { Router } = require('express')
-const course = require('../models/course')
 const router = Router()
 const db = require('../models/index')
-const { logger } = require('../../lib/logger')
 const courseService = require('../services/course_service')
 const enrollmentService = require('../services/enrollment_service')
 const sectionService = require('../services/section_service')
-const { generateUserAuthToken, requireAuthentication } = require('../../lib/auth')
-const e = require('express')
+const { requireAuthentication } = require('../../lib/auth')
 
 router.use('/', require('./sections'))
 
 //GET request from /courses homepage
 router.get('/', requireAuthentication, async function (req, res) {
-    // TODO: use the authentication token (bearer) to authenticate & find the user
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const teacherCourses = await db.Course.findAll({
         include: [{
@@ -60,16 +56,11 @@ router.post('/', requireAuthentication, async function (req, res) {
             role: 'teacher'
             // no section because they are a teacher
         }
-        const missingFields = enrollmentService.validateEnrollmentCreationRequest(enrollmentToInsert)
-        if (missingFields.length == 0) {
-            const enrollment = await db.Enrollment.create(enrollmentToInsert)
-            res.status(201).send({
-                course: courseService.extractCourseFields(course),
-                enrollment: enrollmentService.extractEnrollmentFields(enrollment)
-            })
-        } else {
-            res.status(400).send({error: `Enrollment did not have all the required fields, it was missing ${missingFields}`})
-        }
+        const enrollment = await db.Enrollment.create(enrollmentToInsert)
+        res.status(201).send({
+            course: courseService.extractCourseFields(course),
+            enrollment: enrollmentService.extractEnrollmentFields(enrollment)
+        })
     } else {
         res.status(400).send({error: "A course requires a name"})
     }
@@ -81,15 +72,14 @@ router.post('/', requireAuthentication, async function (req, res) {
 router.post('/join', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
 
-    if (req.body.joinCode) {
-        const joinCode = req.body.joinCode
+    const joinCode = req.body.joinCode
+    if (joinCode) {
 
-        const sectionArray = await db.Section.findAll({
+        const section = await db.Section.findOne({
             where: { joinCode: joinCode }
         })
 
-        if (sectionArray && sectionArray.length > 0) {
-            const section = sectionArray[0]
+        if (section) {
             // create the enrollment
             const enrollmentToInsert = {
                 sectionId: section.id,
@@ -97,16 +87,11 @@ router.post('/join', requireAuthentication, async function (req, res) {
                 role: 'student'
                 // no course because they are a student
             }
-            const missingFields = enrollmentService.validateEnrollmentCreationRequest(enrollmentToInsert)
-            if (missingFields.length == 0) {
-                const enrollment = await db.Enrollment.create(enrollmentToInsert)
-                res.status(201).send({
-                    section: sectionService.extractSectionFields(section),
-                    enrollment: enrollmentService.extractEnrollmentFields(enrollment)
-                })
-            } else {
-                res.status(400).send({error: `Enrollment did not have all the required fields, it was missing ${missingFields}`})
-            }
+            const enrollment = await db.Enrollment.create(enrollmentToInsert)
+            res.status(201).send({
+                section: sectionService.extractSectionFields(section),
+                enrollment: enrollmentService.extractEnrollmentFields(enrollment)
+            })
         } else {
             res.status(404).send({error: `No section exists with the provided join code`})
         }
