@@ -1,4 +1,5 @@
 var express = require('express');
+const cookieParser = require("cookie-parser");
 var app = express();
 const { logger, morganMiddleware } = require('../lib/logger')
 const api = require('./api')
@@ -6,6 +7,7 @@ const api = require('./api')
 app.use(express.json())
 app.use(express.static('public'))
 app.use(morganMiddleware)
+app.use(cookieParser());
 
 /*
  * All routes for the API are written in modules in the api/ directory.  The
