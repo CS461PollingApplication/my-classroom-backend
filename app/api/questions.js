@@ -30,17 +30,21 @@ router.get('/:question_id', requireAuthentication, async function (req, res) {
         try{
             //grab the question from the database
             const question = await db.sequelize.findOne({
-                where: {id: questionId}
+                where: {id: questionId, courseId: courseId}
+            })
+            res.status(200).send({
+                question : question
             })
         }
         catch (e){
             res.status(400).send({error: "Unable to get question"})
             return
         }
-        res.status(200).send(question)
     }
-    //send it back
-
 })
+
+//PUT /courses/:course_id/sections/:section_id/lectures/:lecture_id/questions/:question_id
+//teacher wants top unpublish a question in the lecture 
+//
 
 module.exports = router
