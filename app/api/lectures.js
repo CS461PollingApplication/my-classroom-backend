@@ -93,6 +93,7 @@ router.get('/', requireAuthentication, async function (req, res) {
     }
 })
 
+// create a new lecture within a course
 router.post('/', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const courseId = req.params.course_id
@@ -153,6 +154,7 @@ router.post('/', requireAuthentication, async function (req, res) {
     }
 })
 
+// update fields of a specific lecture
 router.put('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const lectureId = req.params.lecture_id
@@ -191,6 +193,7 @@ router.put('/:lecture_id', requireAuthentication, async function (req, res) {
     }
 })
 
+// get a specific lecture usign lectureId
 router.get('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
     const lectureId = req.params.lecture_id
