@@ -68,7 +68,7 @@ async function getSectionLectureRelation (lectureId, sectiondId) {
 // get all lecture objects for the current course
 router.get('/', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
-    const courseId = req.params.course_id
+    const courseId = parseInt(req.params['course_id'])   
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
     const course = await getCourse(courseId)
 
@@ -96,7 +96,7 @@ router.get('/', requireAuthentication, async function (req, res) {
 // create a new lecture within a course
 router.post('/', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
-    const courseId = req.params.course_id
+    const courseId = parseInt(req.params['course_id'])
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
     var lecture     // will hold the returned lecture object from database
 
@@ -157,8 +157,8 @@ router.post('/', requireAuthentication, async function (req, res) {
 // update fields of a specific lecture
 router.put('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
-    const lectureId = req.params.lecture_id
-    const courseId = req.params.course_id
+    const lectureId = parseInt(req.params['lecture_id'])
+    const courseId = parseInt(req.params['course_id'])
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
     const lecture = await getLecture(lectureId)
     
@@ -196,8 +196,8 @@ router.put('/:lecture_id', requireAuthentication, async function (req, res) {
 // get a specific lecture usign lectureId
 router.get('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
-    const lectureId = req.params.lecture_id
-    const courseId = req.params.course_id
+    const lectureId = parseInt(req.params['lecture_id'])
+    const courseId = parseInt(req.params['course_id'])
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
     const lecture = await getLecture(lectureId)
     var full_response = {}  // will hold response with lecture info and related questions
@@ -268,8 +268,8 @@ router.get('/:lecture_id', requireAuthentication, async function (req, res) {
 // delete lecture and ALL relations to this lecture
 router.delete('/:lecture_id', requireAuthentication, async function (req, res) {
     const user = await db.User.findByPk(req.payload.sub)
-    const lectureId = req.params.lecture_id
-    const courseId = req.params.course_id
+    const lectureId = parseInt(req.params['lecture_id'])
+    const courseId = parseInt(req.params['course_id'])
     const enrollment = await getEnrollmentFromCourse(user.id, courseId) || await getEnrollmentFromSectionInCourse(user.id, courseId)
     const lecture = await getLecture(lectureId)
     
