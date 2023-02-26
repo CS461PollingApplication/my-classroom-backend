@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const moment = require('moment')
 const saltRounds = parseInt(process.env.SALT_ROUNDS, 10) || 8
 const mailer = require('../../lib/mailer')
+const { generateOTP } = require('../../lib/auth')
 
 module.exports = (sequelize, DataTypes) => {
     const User = sequelize.define('User', {
@@ -130,18 +131,13 @@ module.exports = (sequelize, DataTypes) => {
             beforeCreate: async (user) => {
                 user.password = await bcrypt.hash(user.rawPassword, saltRounds)
             },
-            afterCreate: (user) => {
+            afterCreate: async (user) => {
                 mailer.welcome(user)
-                user.generateEmailConfirmation()
+                await user.generateEmailConfirmation()
             },
             beforeUpdate: async (user) => {
                 if (user.rawPassword) {
                     user.password = await bcrypt.hash(user.rawPassword, saltRounds)
-                }
-            },
-            afterUpdate: (user) => {
-                if (user._previousDataValues.email != user.email) {
-                    user.generateEmailConfirmation()
                 }
             }
         }
@@ -149,6 +145,7 @@ module.exports = (sequelize, DataTypes) => {
 
     User.associate = (models) => {
         User.hasMany(models.Session)
+        User.hasMany(models.Enrollment)
     }
 
     // function prototype that can be used to validate the password supplied for authentication
@@ -156,12 +153,13 @@ module.exports = (sequelize, DataTypes) => {
         return bcrypt.compareSync(password, this.password)
     }
 
-    User.prototype.generateEmailConfirmation = function () {
-        this.emailConfirmationCode = this.generateOTP()
+    User.prototype.generateEmailConfirmation = async function () {
+        this.emailConfirmationCode = generateOTP(6)
         // because we are using DATE in sequelize (DATETIME in MYSQL), we convert to UTC timezone for standardized storage & comparisons
         // MySQL documentation here: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
         this.emailConfirmationExpiresAt = moment().add(5, 'm').utc().format("YYYY-MM-DD HH:mm:ss") // set expiration to NOW + 5 minutes
         mailer.confirmation(this)
+        await this.save()
         return this.emailConfirmationCode
     }
 
@@ -169,41 +167,38 @@ module.exports = (sequelize, DataTypes) => {
         return !moment().utc().isBefore(moment(this.emailConfirmationExpiresAt))
     }
 
-    User.prototype.validateEmailConfirmation = function (code) {
-        this.emailConfirmed = code == this.emailConfirmationCode
+    User.prototype.confirmEmail = async function (code) {
+        this.emailConfirmed = (code == this.emailConfirmationCode)
+        await this.save()
         return this.emailConfirmed
     }
 
-    User.prototype.generatePasswordReset = function () {
-        this.passwordResetCode = this.generateOTP()
+    User.prototype.generatePasswordReset = async function () {
+        this.passwordResetCode = generateOTP(6)
         // because we are using DATE in sequelize (DATETIME in MYSQL), we convert to UTC timezone for standardized storage & comparisons
         // MySQL documentation here: https://dev.mysql.com/doc/refman/8.0/en/datetime.html
         this.passwordResetExpiresAt = moment().add(5, 'm').utc().format("YYYY-MM-DD HH:mm:ss") // set expiration to NOW + 5 minutes
         this.passwordResetInitiated = true
+        mailer.passwordReset(this)
+        await this.save()
         return this.passwordResetCode
     }
 
-    User.prototype.passwordResetExpired = function () {
-        return !moment().utc().isBefore(moment(this.passwordResetExpiresAt))
+    User.prototype.resetPassword = async function (password) {
+        await this.update({ rawPassword: password, passwordResetInitiated: false, failedLoginAttempts: 0, lastLogin: moment().utc().format("YYYY-MM-DD HH:mm:ss") })
     }
 
-    User.prototype.validatePasswordReset = function (code) {
+    User.prototype.passwordResetExpired = function () {
+        const now = moment().utc()
+        const expiration = moment(this.passwordResetExpiresAt)
+        return !now.isBefore(expiration)
+    }
+
+    User.prototype.validatePasswordReset = async function (code) {
         const passwordReset = code == this.passwordResetCode
         this.passwordResetInitiated = !passwordReset
-        // TODO: sign a JWT that authenticates a password reset
+        await this.save()
         return passwordReset
-    }
-
-    // generates a one time password of length otpLength and containing digits 0-9 & all lowercase letters in the English alphabet
-    User.prototype.generateOTP = function () {
-        const digits = '0123456789abcdefghijklmnopqrstuvwxyz'
-        const otpLength = 6
-        var otp = ''
-        for(let i = 1; i <= otpLength; i++) {
-            var index = Math.floor(Math.random()*(digits.length))
-            otp = otp + digits[index]
-        }
-        return otp;
     }
 
     return User
