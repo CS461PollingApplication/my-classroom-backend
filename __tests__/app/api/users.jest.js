@@ -543,8 +543,6 @@ describe('/users/:userId', () => {
         let user
         let admin
         let userJwt
-        let adminJwt
-
         beforeAll(async () => {
             user = await db.User.create({
                 firstName: 'regular',
@@ -565,9 +563,6 @@ describe('/users/:userId', () => {
     
             userJwt = jwtUtils.encode({
                 sub: user.id
-            })
-            adminJwt = jwtUtils.encode({
-                sub: admin.id
             })
         })
 
@@ -603,32 +598,32 @@ describe('/users/:userId', () => {
             expect(resp.body.error).toEqual(`emailConfirmationCode incorrect`)
         })
 
-        it('should respond with 400 and emailConfirmationCode expired and new email send', async () => {
+        it('should respond with 498 and emailConfirmationCode expired and new email send', async () => {
             await user.update({emailConfirmationExpiresAt: moment().utc()})
             expect(user.emailConfirmationExpired()).toEqual(true)
             const resp = await request(app).put(`/users/${user.id}/confirm`).set('Authorization', `Bearer ${userJwt}`).send({
                 emailConfirmationCode: user.emailConfirmationCode
             })
-            expect(resp.statusCode).toEqual(400)
+            expect(resp.statusCode).toEqual(498)
             expect(resp.body.error).toEqual(`emailConfirmationCode expired. A new code should have been emailed.`)
             await user.reload()
             expect(user.emailConfirmationExpired()).toEqual(false)
         })
 
-        it('should respond with 204', async () => {
+        it('should respond with 200', async () => {
             const resp = await request(app).put(`/users/${user.id}/confirm`).set('Authorization', `Bearer ${userJwt}`).send({
                 emailConfirmationCode: user.emailConfirmationCode
             })
-            expect(resp.statusCode).toEqual(204)
+            expect(resp.statusCode).toEqual(200)
             await user.reload()
             expect(user.emailConfirmed).toEqual(true)
         })
 
-        it('should respond with 400 and email already confirmed', async () => {
+        it('should respond with 409 and email already confirmed', async () => {
             const resp = await request(app).put(`/users/${user.id}/confirm`).set('Authorization', `Bearer ${userJwt}`).send({
                 emailConfirmationCode: user.emailConfirmationCode
             })
-            expect(resp.statusCode).toEqual(400)
+            expect(resp.statusCode).toEqual(409)
             expect(resp.body.error).toEqual(`email already confirmed`)
         })
     })
@@ -638,7 +633,6 @@ describe('/users/:userId', () => {
         let user
         let admin
         let userJwt
-        let adminJwt
 
         beforeAll(async () => {
             user = await db.User.create({
@@ -661,9 +655,6 @@ describe('/users/:userId', () => {
             userJwt = jwtUtils.encode({
                 sub: user.id
             })
-            adminJwt = jwtUtils.encode({
-                sub: admin.id
-            })
         })
 
         it('should respond with 404 and user not found', async () => {
@@ -678,10 +669,10 @@ describe('/users/:userId', () => {
             expect(resp.body.error).toEqual(`Insufficient permissions to access that resource`)
         })
 
-        it('should respond with 204', async () => {
+        it('should respond with 200', async () => {
             const emailConfirmationCode = user.emailConfirmationCode
             const resp = await request(app).get(`/users/${user.id}/confirm`).set('Authorization', `Bearer ${userJwt}`).send()
-            expect(resp.statusCode).toEqual(204)
+            expect(resp.statusCode).toEqual(200)
             await user.reload()
             expect(user.emailConfirmationCode).not.toEqual(emailConfirmationCode)
         })
@@ -695,6 +686,38 @@ describe('/users/:userId', () => {
     })
 
     describe('DELETE', () => {
+
+        let user
+        let admin
+        let userJwt
+        let adminJwt
+
+        beforeAll(async () => {
+            user = await db.User.create({
+                firstName: 'regular',
+                lastName: 'user',
+                email: 'regularuser4@myclassroom.com',
+                rawPassword: 'regularuserpass!',
+                confirmedPassword: 'regularuserpassword!'
+            })
+    
+            admin = await db.User.create({
+                firstName: 'admin',
+                lastName: 'user',
+                email: 'adminuser4@myclassroom.com',
+                rawPassword: 'adminuserpass!',
+                confirmedPassword: 'adminuserpassword!',
+                admin: true
+            })
+    
+            userJwt = jwtUtils.encode({
+                sub: user.id
+            })
+            adminJwt = jwtUtils.encode({
+                sub: admin.id
+            })
+        })
+
         it('should respond with 404 and user not found', async () => {
             const fakeId = 123123132
             const resp = await request(app).delete(`/users/${fakeId}`).set('Authorization', `Bearer ${userJwt}`).send()

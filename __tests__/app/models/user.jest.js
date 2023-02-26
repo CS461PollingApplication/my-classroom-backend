@@ -238,14 +238,14 @@ describe("User model", () => {
         })
 
         it ("should validate that the email confirmation is correct", async () => {
-            const confirmed = await user.validateEmailConfirmation(code)
+            const confirmed = await user.confirmEmail(code)
             expect(confirmed).toEqual(true)
             expect(user.emailConfirmationExpired()).toEqual(false)
             expect(user.emailConfirmed).toEqual(true)
         })
 
         it ("should invalidate the email confirmation because of incorrect code", async () => {
-            const confirmed = await user.validateEmailConfirmation('A12345')
+            const confirmed = await user.confirmEmail('A12345')
             expect(confirmed).toEqual(false)
             expect(user.emailConfirmationExpired()).toEqual(false)
             expect(user.emailConfirmed).toEqual(false)
@@ -285,14 +285,14 @@ describe("User model", () => {
             expect((now.minutes() + 5) % 60).toEqual(moment(user.passwordResetExpiresAt).minutes())
         })
 
-        it ("should validate that the password confirmation is correct", () => {
-            expect(user.validatePasswordReset(code)).toBeTruthy()
+        it ("should validate that the password confirmation is correct", async () => {
+            expect(await user.validatePasswordReset(code)).toBeTruthy()
             expect(user.passwordResetExpired()).toBeFalsy()
             expect(user.passwordResetInitiated).toBeFalsy()
         })
 
-        it ("should invalidate the password reset because of incorrect code", () => {
-            expect(user.validatePasswordReset('A12345')).toBeFalsy()
+        it ("should invalidate the password reset because of incorrect code", async () => {
+            expect(await user.validatePasswordReset('A12345')).toBeFalsy()
             expect(user.passwordResetExpired()).toBeFalsy()
             expect(user.passwordResetInitiated).toBeTruthy()
         })
