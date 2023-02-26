@@ -361,6 +361,7 @@ router.put('/:userId/confirm', requireAuthentication, async function (req, res, 
   }
 })
 
+// Route for user to request a confirmation message be sent to their email again
 router.get('/:userId/confirm', requireAuthentication, async function (req, res, next) {
   const userId = req.params.userId
   const user = await db.User.findByPk(userId)
