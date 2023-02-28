@@ -106,6 +106,8 @@ module.exports = (sequelize, DataTypes) => {
     Enrollment.associate = (models) => {
         Enrollment.belongsTo(models.Course)
         Enrollment.belongsTo(models.Section)
+        Enrollment.belongsTo(models.User)
+        Enrollment.hasMany(models.Response)
     }
 
     return Enrollment

@@ -60,6 +60,8 @@ module.exports = (sequelize, DataTypes) => {
 
     Section.associate = (models) => {
         Section.hasMany(models.Enrollment)
+        Section.hasMany(models.LectureForSection)
+        Section.belongsTo(models.Course)
     }
 
     return Section
