@@ -35,9 +35,6 @@ module.exports = (sequelize, DataTypes) => {
                 notEmpty: {
                     msg: "Section join code cannot be empty"
                 },
-                unique: {
-                    msg: "Section join code cannot be the same as another section's join code"
-                },
                 len: {
                     args: [6, 6],
                     msg: 'Section join code must be 6 characters'
