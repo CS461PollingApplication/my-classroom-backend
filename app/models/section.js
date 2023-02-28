@@ -1,5 +1,7 @@
 'use strict'
 
+const { generateOTP } = require('../../lib/password_gen')
+
 module.exports = (sequelize, DataTypes) => {
     const Section = sequelize.define('Section', {
         id: {
@@ -27,15 +29,11 @@ module.exports = (sequelize, DataTypes) => {
         },
         joinCode: {
             type: DataTypes.STRING,
-            allowNull: false,
             unique: true,
             validate: {
                 isAlphanumeric: true,
-                notNull: {
-                    msg: "Section join code required"
-                },
                 notEmpty: {
-                    msg: "section join code cannot be empty"
+                    msg: "Section join code cannot be empty"
                 },
                 len: {
                     args: [6, 6],
@@ -52,8 +50,19 @@ module.exports = (sequelize, DataTypes) => {
                 name: 'custom_unique_section_constraint'
             }
         ],
-        timestamps: true
+        timestamps: true,
+        hooks: {
+            beforeCreate: async (section) => {
+                section.joinCode = generateOTP(6)
+            }
+        }
     })
+
+    Section.associate = (models) => {
+        Section.hasMany(models.Enrollment)
+        Section.hasMany(models.LectureForSection)
+        Section.belongsTo(models.Course)
+    }
 
     return Section
 }
