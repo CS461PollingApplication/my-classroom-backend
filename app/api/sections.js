@@ -31,10 +31,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
         } catch (e) {
             if (e instanceof ValidationError) {
                 // this will happen if a randomly generated join code is not unique
-                logger.error(e)
-                res.status(500).send({
-                    error: "An unexpected arror occured. Please try again"
-                })
+                next(e)
             }
             else if (e instanceof UniqueConstraintError) {
                 res.status(400).send({
@@ -54,7 +51,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
             res.status(403).send({error: `Only the teacher for a course can create a section`})
         }
         else {
-            res.status(400).send({error: `Request did not contain required fields to create a section and user does not have credentials to do so anyways`})
+            res.status(403).send({error: `Request did not contain required fields to create a section and user does not have credentials to do so anyways`})
         }
     }
 })

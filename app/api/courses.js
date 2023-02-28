@@ -126,7 +126,7 @@ router.put('/:course_id', requireAuthentication, async function (req, res) {
     })
 
     if (enrollment) {
-        // all fields are required in the request, even if unchanged
+        // just need one of the following in the request to update
         if (req.body.name || req.body.description || req.body.published) {
             const course = await db.Course.findByPk(courseId)
             const updatedCourse = courseService.extractCourseUpdateFields(req.body)
