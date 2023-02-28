@@ -5,9 +5,9 @@ const courseService = require('../services/course_service')
 const enrollmentService = require('../services/enrollment_service')
 const sectionService = require('../services/section_service')
 const { requireAuthentication } = require('../../lib/auth')
+const string_helpers = require('../../lib/string_helpers')
 
 router.use('/', require('./sections'))
-router.use('/', require('./course_id'))
 
 //GET request from /courses homepage
 router.get('/', requireAuthentication, async function (req, res) {
@@ -48,20 +48,31 @@ router.post('/', requireAuthentication, async function (req, res) {
     // create course 
     if (req.body.name) { // name is required, other fields can be left unspecified
         // create course with valid fields
-        const course = await db.Course.create(courseService.extractCourseFields(req.body))
+        try {
+            const course = await db.Course.create(courseService.extractCourseFields(req.body))
         
-        //create the enrollment
-        const enrollmentToInsert = {
-            courseId: course.id,
-            userId: user.id,
-            role: 'teacher'
-            // no section because they are a teacher
+            //create the enrollment
+            const enrollmentToInsert = {
+                courseId: course.id,
+                userId: user.id,
+                role: 'teacher'
+                // no section because they are a teacher
+            }
+            const enrollment = await db.Enrollment.create(enrollmentToInsert)
+            res.status(201).send({
+                course: courseService.extractCourseFields(course),
+                enrollment: enrollmentService.extractEnrollmentFields(enrollment)
+            })
+        } catch (e) {
+            if (e instanceof ValidationError) {
+                res.status(400).send({
+                    error: string_helpers.serializeSequelizeErrors(e)
+                })
+            } else {
+                next(e)
+            }
         }
-        const enrollment = await db.Enrollment.create(enrollmentToInsert)
-        res.status(201).send({
-            course: courseService.extractCourseFields(course),
-            enrollment: enrollmentService.extractEnrollmentFields(enrollment)
-        })
+        
     } else {
         res.status(400).send({error: "A course requires a name"})
     }
@@ -101,5 +112,71 @@ router.post('/join', requireAuthentication, async function (req, res) {
     }
 })
 
+router.put('/:course_id', requireAuthentication, async function (req, res) {
+    const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
+    const courseId = parseInt(req.params['course_id'])
+
+    // we want to update a course only if the user for the course is a teacher
+    const enrollment = await db.Enrollment.findOne({
+        where: { 
+            userId: user.id,
+            courseId: courseId,
+            role: 'teacher'
+        }
+    })
+
+    if (enrollment) {
+        // all fields are required in the request, even if unchanged
+        if (req.body.name || req.body.description || req.body.published) {
+            const course = await db.Course.findByPk(courseId)
+            const updatedCourse = courseService.extractCourseFields(req.body)
+            try {
+                await course.update(updatedCourse)
+                res.status(200).send({
+                    course: courseService.extractCourseFields(course)
+                })
+            } catch (e) {
+                if (e instanceof ValidationError) {
+                    res.status(400).send({
+                        error: string_helpers.serializeSequelizeErrors(e)
+                    })
+                } else {
+                    next(e)
+                }
+            }
+        } else {
+            res.status(400).send({error: "Request must contain either name, description, or published status"})
+        }
+    } else {
+        res.status(403).send({error: `Only the teacher for a course can edit the course`})
+    }
+})
+
+router.delete('/:course_id', requireAuthentication, async function (req, res) {
+    const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
+    const courseId = parseInt(req.params['course_id'])
+
+    // we want to update a course only if the user for the course is a teacher
+    // **NOTE: might be valuable at some point to just create a function that checks if a user is a teacher?
+    const enrollment = await db.Enrollment.findOne({
+        where: { 
+            userId: user.id,
+            courseId: courseId,
+            role: 'teacher'
+        }
+    })
+
+    if (enrollment) {
+        const course = await db.Course.findByPk(courseId)
+        try {
+            await course.destroy()
+            res.status(204).send()
+        } catch {
+            next(e)
+        }
+    } else {
+        res.status(403).send({error: `Only the teacher for a course can delete the course`})
+    }
+})
 
 module.exports = router

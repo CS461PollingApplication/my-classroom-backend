@@ -18,7 +18,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
         }
     })
 
-    if (req.body.number && enrollment) {   // req.body.number not required as it will be auto incremented if not present
+    if (req.body.number && enrollment) {
         const sectionToInsert = {
             courseId: parseInt(req.params['course_id']),
             number: req.body.number

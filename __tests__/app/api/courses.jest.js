@@ -10,7 +10,6 @@ describe('/courses endpoints', () => {
     let token2
     let user2
     let course
-    let course2
     let section
 
     beforeAll(async() => {
@@ -148,7 +147,6 @@ describe('/courses endpoints', () => {
 
     it('should respond with 400 when teacher tries to edit a course without required fields', async () => {
         const resp = await request(app).put(`/courses/${course.id}`).send({
-            name: "uhhhhhhhhhhh"
         }).set('Authorization', `Bearer ${token}`)
         expect(resp.statusCode).toEqual(400)
     })
@@ -165,10 +163,20 @@ describe('/courses endpoints', () => {
         expect(resp.body.course.published).toEqual(true)
     })
 
-    it('should respond with 200 when a teacher tries to delete a course', async () => {
+    it('should respond with 200 when teacher tries to edit a course with only some fields', async () => {
+        const resp = await request(app).put(`/courses/${course.id}`).send({
+            description: "This is a description. No, like seriously it is"
+        }).set('Authorization', `Bearer ${token}`)
+        expect(resp.statusCode).toEqual(200)
+        expect(resp.body.course.name).toEqual("Willy Wonka and his darn chocolate factory")
+        expect(resp.body.course.description).toEqual("This is a description. No, like seriously it is")
+        expect(resp.body.course.published).toEqual(true)
+    })
+
+    it('should respond with 204 when a teacher tries to delete a course', async () => {
         const courseId = course.id
         const resp = await request(app).delete(`/courses/${course.id}`).set('Authorization', `Bearer ${token}`)
-        expect(resp.statusCode).toEqual(200)
+        expect(resp.statusCode).toEqual(204)
         const deletedCourse = await db.Course.findByPk(courseId)
         expect(deletedCourse).toBeFalsy()
     })
