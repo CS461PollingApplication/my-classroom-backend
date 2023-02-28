@@ -129,7 +129,7 @@ router.put('/:course_id', requireAuthentication, async function (req, res) {
         // all fields are required in the request, even if unchanged
         if (req.body.name || req.body.description || req.body.published) {
             const course = await db.Course.findByPk(courseId)
-            const updatedCourse = courseService.extractCourseFields(req.body)
+            const updatedCourse = courseService.extractCourseUpdateFields(req.body)
             try {
                 await course.update(updatedCourse)
                 res.status(200).send({

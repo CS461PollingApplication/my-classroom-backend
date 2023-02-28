@@ -17,6 +17,10 @@ exports.extractCourseFields = (body) => {
     return extractValidFields(body, courseInformationSchema)
 }
 
+exports.extractCourseUpdateFields = (body) => {
+    return extractValidFields(body, courseInsertSchema)
+}
+
 exports.validateCourseCreationRequest = (body) => {
     return validateAgainstSchema(body, courseInsertSchema)
 }
