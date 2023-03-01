@@ -7,7 +7,7 @@ const sectionService = require('../services/section_service')
 const { requireAuthentication, generateOTP } = require('../../lib/auth')
 const { ValidationError, UniqueConstraintError } = require('sequelize')
 
-router.post('/:course_id/sections', requireAuthentication, async function (req, res) {
+router.post('/:course_id/sections', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     // make sure the user creating this section is the teacher for the course
     const enrollment = await db.Enrollment.findOne({
@@ -29,14 +29,14 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
                 section: sectionService.extractSectionFields(section)
             })
         } catch (e) {
-            if (e instanceof ValidationError) {
-                // this will happen if a randomly generated join code is not unique
-                next(e)
-            }
-            else if (e instanceof UniqueConstraintError) {
+            if (e instanceof UniqueConstraintError) {
                 res.status(400).send({
                     error: "A section for this course with this section number already exists"
                 })
+            }
+            else if (e instanceof ValidationError) {
+                // this will happen if a randomly generated join code is not unique
+                next(e)
             }
             else {
                 logger.error(e)

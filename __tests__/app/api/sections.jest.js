@@ -55,14 +55,36 @@ describe('api/sections tests', () => {
     describe('POST /courses/:course_id/sections', () => {
         it('should respond 400 for creating a section with already existing number', async () => {
             const resp = await request(app).post(`/courses/${course1.id}/sections`).send({
-                courseId: course1.id,
                 number: 1
-                // joinCode: "joinjoinjoin"
             }).set('Authorization', `Bearer ${teacherToken}`)
 
             expect(resp.statusCode).toEqual(400)
         })
 
+        it('should respond 400 for creating a section with missing value', async () => {
+            const resp = await request(app).post(`/courses/${course1.id}/sections`).send({
+            }).set('Authorization', `Bearer ${teacherToken}`)
+
+            expect(resp.statusCode).toEqual(400)
+        })
+
+        it('should respond 403 for creating a section as a student', async () => {
+            const resp = await request(app).post(`/courses/${course1.id}/sections`).send({
+                number: 2
+            }).set('Authorization', `Bearer ${studentToken}`)
+
+            expect(resp.statusCode).toEqual(403)
+        })
+
+        it('should respond 201 for successfully creating section', async () => {
+            const resp = await request(app).post(`/courses/${course1.id}/sections`).send({
+                number: 2
+            }).set('Authorization', `Bearer ${teacherToken}`)
+
+            expect(resp.statusCode).toEqual(201)
+            expect(resp.body.section.courseId).toEqual(course1.id)
+            expect(resp.body.section.number).toEqual(2)
+        })
     })
 
 })
