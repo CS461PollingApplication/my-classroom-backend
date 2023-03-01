@@ -17,10 +17,10 @@ router.post('', async function (req, res, next) {
     if (missingFields.length == 0) {
       if (req.body.rawPassword == req.body.confirmedPassword) {
         try {
-          const user = await db.User.create(usersService.extractUserCreationFields(req.body))
+          const user = await db.User.create(UserService.extractUserCreationFields(req.body))
           await setUserAuthCookie(res, user)
           res.status(201).send({
-            user: usersService.filterUserFields(user)
+            user: UserService.filterUserFields(user)
           })
         }
         catch (e) {
@@ -57,7 +57,7 @@ router.put('', async function (req, res, next) {
               await user.resetPassword(req.body.rawPassword)
               await setUserAuthCookie(res, user)
               res.status(200).send({
-                user: usersService.filterUserFields(user),
+                user: UserService.filterUserFields(user),
               })
             }
             catch (e) {
@@ -137,7 +137,7 @@ router.post('/login', async function (req, res, next) {
             if (loginStatus >= 0) {
               await setUserAuthCookie(res, user)
               res.status(200).send({
-                user: usersService.filterUserFields(user),
+                user: UserService.filterUserFields(user),
                 loginStatus: loginStatus
               })
             }
