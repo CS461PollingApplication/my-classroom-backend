@@ -59,7 +59,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
         } catch (e) {
             if (e instanceof UniqueConstraintError) {
                 res.status(400).send({
-                    error: "A section for this course with this section number already exists"
+                    error: "A section in this course with this section number already exists"
                 })
             }
             else if (e instanceof ValidationError) {
@@ -116,6 +116,54 @@ router.get('/:course_id/sections/:section_id', requireAuthentication, async func
     }
     else {
         res.status(403).send({error: "Must be a teacher of this course to get section info"})
+    }
+})
+
+router.put('/:course_id/sections/:section_id', requireAuthentication, async function (req, res, next) {
+    const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
+    const courseId = parseInt(req.params['course_id'])
+    const sectionId = parseInt(req.params['section_id'])
+    const newNumber = req.body.number
+
+    const isTeacher = await checkIfTeacher(user.id, courseId)
+    const foundSection = getSection(sectionId)
+
+    if (isTeacher) {
+        if (foundSection != null) {
+            if (!newNumber) {   // number is the only field that can be updated, so enforce that it is present
+                try {
+                    const newSection = await db.Section.update(
+                        { number: newNumber },
+                        { where: { id: sectionId } }
+                    )
+                    res.status(200).send(newSection)
+                }
+                catch (e) {
+                    if (e instanceof UniqueConstraintError) {
+                        res.status(400).send({
+                            error: "A section in this course with this section number already exists"
+                        })
+                    }
+                    else if (e instanceof ValidationError) {
+                        res.status(400).send({error: serializeSequelizeErrors(e)})
+                    }
+                    else {
+                        next(e)
+                    }
+                }
+            }
+            else {  // user didn't enter a number
+                res.status(400).send({
+                    error: "Must enter a number field. Number is the only field that can be updated"
+                })
+            }
+        }
+        else {  // foundSection is null
+            res.status(404).send({error: "There is no section for the provided section id"})
+        }
+    }
+    else {  // user is not teacher
+        res.status(403).send({error: "Must be a teacher of this course to update section"})
     }
 })
 

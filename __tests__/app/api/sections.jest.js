@@ -101,7 +101,6 @@ describe('api/sections tests', () => {
         })
 
         it('should respond with 200 for successfully getting a course with provided lecture', async () => {
-            
             // create lecture
             const temp_lec = await db.Lecture.create({
                 title: 'question set 1',
@@ -126,5 +125,9 @@ describe('api/sections tests', () => {
             expect(resp.body.lectures[0].title).toEqual(temp_lec.title)
         })
     })
+
+
+
+    // have test requests with no number field, and as ""
 
 })
