@@ -5,14 +5,14 @@ const request = require('supertest')
 
 
 describe('api/sections tests', () => {
-    let teacher, teacherToken
-    let student, studentToken
+    let teacherToken
+    let studentToken
     let course1
     let section1
 
 
     beforeAll(async() => {
-        teacher = await db.User.create({
+        const teacher = await db.User.create({
             firstName: 'Dan',
             lastName: 'Smith',
             email: 'dannySmith@myclassroom.com',
@@ -20,7 +20,7 @@ describe('api/sections tests', () => {
         })
         teacherToken = generateUserAuthToken(teacher)
         
-        student = await db.User.create({
+        const student = await db.User.create({
             firstName: 'John',
             lastName: 'Doe',
             email: 'johndoe@myclassroom.com',
@@ -126,8 +126,67 @@ describe('api/sections tests', () => {
         })
     })
 
+    describe('PUT /courses/:course_id/sections/:section_id', () => {
+        
+        let sectionToUpdate
+        beforeAll(async() => {
+            sectionToUpdate = await db.Section.create({
+                number: 3,
+                courseId: course1.id
+            })
+        })
+        
+        it('should respond with 400 for updating section with conflicting number', async () => {
+            const resp = await request(app).put(`/courses/${course1.id}/sections/${sectionToUpdate.id}`).send({
+                number: 1
+            }).set('Authorization', `Bearer ${teacherToken}`)  
+            
+            expect(resp.statusCode).toEqual(400)
+        })
 
+        it('should respond with 400 for updating section with empty number', async () => {
+            const resp = await request(app).put(`/courses/${course1.id}/sections/${sectionToUpdate.id}`).send({
+                number: ""
+            }).set('Authorization', `Bearer ${teacherToken}`)  
+            
+            expect(resp.statusCode).toEqual(400)
+        })
 
-    // have test requests with no number field, and as ""
+        it('should respond with 400 for updating section with no number', async () => {
+            const resp = await request(app).put(`/courses/${course1.id}/sections/${sectionToUpdate.id}`).send({
+            }).set('Authorization', `Bearer ${teacherToken}`)  
+            
+            expect(resp.statusCode).toEqual(400)
+        })
+    
+        it('should respond with 404 for updating section invalid id', async () => {
+            const resp = await request(app).put(`/courses/${course1.id}/sections/${-1}`).send({
+                number: 4
+            }).set('Authorization', `Bearer ${teacherToken}`)  
+            
+            expect(resp.statusCode).toEqual(404)
+        })
 
+        it('should respond with 403 for updating section as a student', async () => {
+            const resp = await request(app).put(`/courses/${course1.id}/sections/${sectionToUpdate.id}`).send({
+                number: 4
+            }).set('Authorization', `Bearer ${studentToken}`)  
+            
+            expect(resp.statusCode).toEqual(403)
+        })
+
+        it('should respond with 200 for successfully updating section', async () => {       
+            const resp = await request(app).put(`/courses/${course1.id}/sections/${sectionToUpdate.id}`).send({
+                number: 4
+            }).set('Authorization', `Bearer ${teacherToken}`)  
+
+            expect(resp.statusCode).toEqual(200)
+            
+            // check if section was updated
+            const check_sec = await db.Section.findOne({
+                where: { id: sectionToUpdate.id }
+            })
+            expect(check_sec.number).toEqual(4)         
+        })
+    })
 })

@@ -126,17 +126,17 @@ router.put('/:course_id/sections/:section_id', requireAuthentication, async func
     const newNumber = req.body.number
 
     const isTeacher = await checkIfTeacher(user.id, courseId)
-    const foundSection = getSection(sectionId)
+    const foundSection = await getSection(sectionId)
 
     if (isTeacher) {
         if (foundSection != null) {
-            if (!newNumber) {   // number is the only field that can be updated, so enforce that it is present
+            if (newNumber != null && newNumber != "") {   // number is the only field that can be updated, so enforce that it is present
                 try {
-                    const newSection = await db.Section.update(
+                    await db.Section.update(
                         { number: newNumber },
                         { where: { id: sectionId } }
                     )
-                    res.status(200).send(newSection)
+                    res.status(200).send()
                 }
                 catch (e) {
                     if (e instanceof UniqueConstraintError) {
@@ -154,7 +154,7 @@ router.put('/:course_id/sections/:section_id', requireAuthentication, async func
             }
             else {  // user didn't enter a number
                 res.status(400).send({
-                    error: "Must enter a number field. Number is the only field that can be updated"
+                    error: "Must enter a valid number field. Number is the only field that can be updated"
                 })
             }
         }
