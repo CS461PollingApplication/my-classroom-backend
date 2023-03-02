@@ -5,14 +5,14 @@ const request = require('supertest')
 
 
 describe('api/sections tests', () => {
-    let teacherToken
-    let studentToken
+    let teacher, teacherToken
+    let student, studentToken
     let course1
     let section1
 
 
     beforeAll(async() => {
-        const teacher = await db.User.create({
+        teacher = await db.User.create({
             firstName: 'Dan',
             lastName: 'Smith',
             email: 'dannySmith@myclassroom.com',
@@ -20,7 +20,7 @@ describe('api/sections tests', () => {
         })
         teacherToken = generateUserAuthToken(teacher)
         
-        const student = await db.User.create({
+        student = await db.User.create({
             firstName: 'John',
             lastName: 'Doe',
             email: 'johndoe@myclassroom.com',
@@ -85,6 +85,51 @@ describe('api/sections tests', () => {
             expect(resp.body.section.courseId).toEqual(course1.id)
             expect(resp.body.section.number).toEqual(2)
         })
+    })
+
+    describe('GET /courses/:course_id/sections', () => {
+        
+        let courseToGetFrom     // create a seperate course for get from, so results aren't affected by prior tests
+        beforeAll(async() => {
+            courseToGetFrom = await db.Course.create({
+                name: 'CS 160',
+                description: 'Intro to CS'
+            })
+            // enroll as the teacher of this course
+            await db.Enrollment.create({
+                role: "teacher",
+                courseId: courseToGetFrom.id,
+                userId: teacher.id
+            })
+        })
+    
+        it('should respond with 403 for getting sections as a non teacher', async () => {
+            const resp = await request(app).get(`/courses/${courseToGetFrom.id}/sections`).set('Authorization', `Bearer ${studentToken}`)
+
+            expect(resp.statusCode).toEqual(403)
+        })
+
+        it('should respond with 204 for a course with no sections', async () => {
+            const resp = await request(app).get(`/courses/${courseToGetFrom.id}/sections`).set('Authorization', `Bearer ${teacherToken}`)
+
+            expect(resp.statusCode).toEqual(204)
+        })
+
+        it('should respond with 200 for successfully getting sections', async () => {
+            // create a section for courseToGetFrom
+            const temp_section = await db.Section.create({
+                number: 1,
+                courseId: courseToGetFrom.id
+            })
+            
+            const resp = await request(app).get(`/courses/${courseToGetFrom.id}/sections`).set('Authorization', `Bearer ${teacherToken}`)
+
+            expect(resp.statusCode).toEqual(200)
+            expect(resp.body.length).toEqual(1)
+            expect(resp.body[0].id).toEqual(temp_section.id)
+            expect(resp.body[0].number).toEqual(temp_section.number)
+            expect(resp.body[0].joinCode).toEqual(temp_section.joinCode)
+        }) 
     })
 
     describe('GET /courses/:course_id/sections/:section_id', () => {

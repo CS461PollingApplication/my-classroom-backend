@@ -25,6 +25,14 @@ async function getSection(sectionId) {
     })
 }
 
+async function getSectionsInCourse(courseId) {
+    return await db.Section.findAll({
+        where: {
+            courseId: courseId
+        }
+    })
+}
+
 async function getLecturesFromSection(sectionId) {
     return await db.Lecture.findAll({
         include: [{
@@ -84,6 +92,38 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
     }
 })
 
+router.get('/:course_id/sections', requireAuthentication, async function (req, res, next) {
+    const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
+    const courseId = parseInt(req.params['course_id'])
+
+    // make sure the user getting sections is the teacher for the course
+    const isTeacher = await checkIfTeacher(user.id, courseId)
+
+    if (isTeacher) {
+        try {
+            const sectionsInCourse = await getSectionsInCourse(courseId)
+            console.log(sectionsInCourse)
+            if (sectionsInCourse.length != 0) {
+                res.status(200).send(sectionsInCourse)
+            }
+            else {
+                res.status(204).send()
+            }
+        }
+        catch (e) {
+            if (e instanceof ValidationError) {
+                return res.status(400).send({error: serializeSequelizeErrors(e)})
+            }
+            else {
+                next(e)
+            }
+        }
+    }
+    else {
+        res.status(403).send({error: "Only the teacher for a course can get a section"})
+    }
+})
+
 router.get('/:course_id/sections/:section_id', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
@@ -94,7 +134,7 @@ router.get('/:course_id/sections/:section_id', requireAuthentication, async func
 
     if (isTeacher) {
         try {
-            const foundSection = await getSection(sectionId)  // *** returning back all fields... do we want to only return a few? ***
+            const foundSection = await getSection(sectionId)
             if (foundSection != null) {
                 respObj['section'] = foundSection
                 let relatedLectures = await getLecturesFromSection(sectionId)
