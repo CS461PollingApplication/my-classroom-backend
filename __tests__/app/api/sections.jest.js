@@ -3,13 +3,11 @@ const db = require('../../../app/models')
 const { generateUserAuthToken } = require('../../../lib/auth')
 const request = require('supertest')
 
-
 describe('api/sections tests', () => {
-    let teacher, teacherToken
-    let student, studentToken
+    let teacher, teacherToken, teachEnroll
+    let student, studentToken, studentEnroll
     let course1
     let section1
-
 
     beforeAll(async() => {
         teacher = await db.User.create({
@@ -39,13 +37,13 @@ describe('api/sections tests', () => {
             courseId: course1.id
         })
 
-        await db.Enrollment.create({
+        teachEnroll = await db.Enrollment.create({
             role: "teacher",
             courseId: course1.id,
             userId: teacher.id
         })
 
-        await db.Enrollment.create({
+        studentEnroll = await db.Enrollment.create({
             role: "student",
             sectionId: section1.id,
             userId: student.id
@@ -90,13 +88,14 @@ describe('api/sections tests', () => {
     describe('GET /courses/:course_id/sections', () => {
         
         let courseToGetFrom     // create a seperate course for get from, so results aren't affected by prior tests
+        let tempTeachEnroll
         beforeAll(async() => {
             courseToGetFrom = await db.Course.create({
                 name: 'CS 160',
                 description: 'Intro to CS'
             })
             // enroll as the teacher of this course
-            await db.Enrollment.create({
+            tempTeachEnroll = await db.Enrollment.create({
                 role: "teacher",
                 courseId: courseToGetFrom.id,
                 userId: teacher.id
@@ -129,7 +128,12 @@ describe('api/sections tests', () => {
             expect(resp.body[0].id).toEqual(temp_section.id)
             expect(resp.body[0].number).toEqual(temp_section.number)
             expect(resp.body[0].joinCode).toEqual(temp_section.joinCode)
-        }) 
+        })
+        
+        afterAll(async () => {
+            await courseToGetFrom.destroy()
+            await tempTeachEnroll.destroy()
+        })
     })
 
     describe('GET /courses/:course_id/sections/:section_id', () => {
@@ -233,5 +237,18 @@ describe('api/sections tests', () => {
             })
             expect(check_sec.number).toEqual(4)         
         })
+
+        afterAll(async () => {
+            await sectionToUpdate.destroy()
+        })
+    })
+
+    afterAll(async () => {
+        await teacher.destroy()
+        await student.destroy()
+        await course1.destroy()
+        await section1.destroy()
+        await studentEnroll.destroy()
+        await teachEnroll.destroy()
     })
 })

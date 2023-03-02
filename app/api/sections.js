@@ -4,7 +4,7 @@ const router = Router()
 const db = require('../models/index')
 const { logger } = require('../../lib/logger')
 const sectionService = require('../services/section_service')
-const { requireAuthentication, generateOTP } = require('../../lib/auth')
+const { requireAuthentication } = require('../../lib/auth')
 const { ValidationError, UniqueConstraintError } = require('sequelize')
 
 async function checkIfTeacher(userId, courseId) {
@@ -47,6 +47,7 @@ async function getLecturesFromSection(sectionId) {
     })
 }
 
+// add new section to course
 router.post('/:course_id/sections', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
@@ -54,7 +55,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
     // make sure the user creating this section is the teacher for the course
     const isTeacher = await checkIfTeacher(user.id, courseId)
 
-    if (req.body.number && isTeacher) {
+    if (req.body.number && isTeacher) {     // if course number was passed in, and user is teacher
         const sectionToInsert = {
             courseId: parseInt(req.params['course_id']),
             number: req.body.number
@@ -80,10 +81,10 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
             }
         }
     } else {
-        if (isTeacher) {
+        if (isTeacher) {    // user is teacher, problem is that number wasn't passed in
             res.status(400).send({error: `Request did not contain required fields to create a section`})
         }
-        else if (req.body.number) {
+        else if (req.body.number) {     // number is passed in, problem is that user isn't teacher
             res.status(403).send({error: `Only the teacher for a course can create a section`})
         }
         else {
@@ -92,22 +93,21 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
     }
 })
 
+// get all sections within a course
 router.get('/:course_id/sections', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
 
-    // make sure the user getting sections is the teacher for the course
     const isTeacher = await checkIfTeacher(user.id, courseId)
 
     if (isTeacher) {
         try {
             const sectionsInCourse = await getSectionsInCourse(courseId)
-            console.log(sectionsInCourse)
-            if (sectionsInCourse.length != 0) {
+            if (sectionsInCourse.length != 0) {     // if sections are present for this course
                 res.status(200).send(sectionsInCourse)
             }
             else {
-                res.status(204).send()
+                res.status(204).send()  // no sections for this course
             }
         }
         catch (e) {
@@ -124,6 +124,7 @@ router.get('/:course_id/sections', requireAuthentication, async function (req, r
     }
 })
 
+// get a specific section, and lectures for that section
 router.get('/:course_id/sections/:section_id', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
@@ -135,9 +136,9 @@ router.get('/:course_id/sections/:section_id', requireAuthentication, async func
     if (isTeacher) {
         try {
             const foundSection = await getSection(sectionId)
-            if (foundSection != null) {
+            if (foundSection != null) {     // if section was found for given id
                 respObj['section'] = foundSection
-                let relatedLectures = await getLecturesFromSection(sectionId)
+                const relatedLectures = await getLecturesFromSection(sectionId)   // get lectures and append to response
                 respObj['lectures'] = relatedLectures
                 res.status(200).send(respObj)
             }
@@ -159,6 +160,7 @@ router.get('/:course_id/sections/:section_id', requireAuthentication, async func
     }
 })
 
+// update a specific section
 router.put('/:course_id/sections/:section_id', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
@@ -170,7 +172,7 @@ router.put('/:course_id/sections/:section_id', requireAuthentication, async func
 
     if (isTeacher) {
         if (foundSection != null) {
-            if (newNumber != null && newNumber != "") {   // number is the only field that can be updated, so enforce that it is present
+            if (newNumber != null && newNumber != "") {   // number is the only field that can be updated, so enforce that it is present and valid
                 try {
                     await db.Section.update(
                         { number: newNumber },
