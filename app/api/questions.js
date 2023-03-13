@@ -1,9 +1,10 @@
-const router = require('express').Router()
+const router = require('express').Router({ mergeParams: true })
 const db = require('../models')
 const { generateUserAuthToken, requireAuthentication } = require('../../lib/auth')
 
+// base path: /courses/:course_id/lectures/:lecture_id/questions
+
 //Teacher wants to view a question inside a lecture 
-//GET /courses/:course_id/sections/:section_id/lectures/:lecture_id/questions/:question_id
 router.get('/:question_id', requireAuthentication, async function (req, res) {
     //authenticate user
     const user = await db.User.findByPk(req.payload.sub)
@@ -43,8 +44,6 @@ router.get('/:question_id', requireAuthentication, async function (req, res) {
     }
 })
 
-//PUT /courses/:course_id/sections/:section_id/lectures/:lecture_id/questions/:question_id
-//teacher wants top unpublish a question in the lecture 
-//
+// TODO: PUT teacher wants to (un)publish a question in the lecture 
 
 module.exports = router
