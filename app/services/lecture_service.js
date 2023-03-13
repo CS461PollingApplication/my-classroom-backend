@@ -20,3 +20,12 @@ exports.extractLectureUpdateFields = (body) => {
 exports.validateLectureCreationRequest = (body) => {
     return validateAgainstSchema(body, lectureInsertSchema)
 }
+
+exports.getLectureInCourse = async (lectureId, courseId) => {
+    return await db.Lecture.findOne({
+        where: {
+            id: lectureId,
+            courseId: courseId
+        }
+    })
+}
