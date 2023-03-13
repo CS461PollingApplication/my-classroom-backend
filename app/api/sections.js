@@ -4,22 +4,13 @@ const router = Router()
 const db = require('../models/index')
 const { logger } = require('../../lib/logger')
 const sectionService = require('../services/section_service')
+const enrollmentService = require('../services/enrollment_service')
 const { requireAuthentication } = require('../../lib/auth')
 const { ValidationError, UniqueConstraintError } = require('sequelize')
 
-async function checkIfTeacher(userId, courseId) {
-    return await db.Enrollment.findOne({
-        where: { 
-            userId: userId,
-            courseId: courseId,
-            role: 'teacher'
-        }
-    })
-}
-
 async function getSection(sectionId) {
     return await db.Section.findOne({
-        where: { 
+        where: {
             id: sectionId
         }
     })
@@ -34,17 +25,28 @@ async function getSectionsInCourse(courseId) {
 }
 
 async function getLecturesFromSection(sectionId) {
-    return await db.Lecture.findAll({
+    let foundLectures = await db.Lecture.findAll({
         include: [{
             model: db.LectureForSection,
             include: [{
                 model: db.Section,
                 where: { id: sectionId },
+                required: true
             }],
-            attributes: []  // don't return any attributes from join (only lecture fields)
+            attributes: ['published'],  // don't return any attributes from join (only lecture fields)
+            required: true
         }],
         attributes: { exclude: ['CourseId'] }   // exclude duplicate CourseId field from join
     })
+
+    // bring the published attribute up to same level as other attributes
+    for (let i = 0; i < foundLectures.length; i++) {
+        if (foundLectures[i].LectureForSections.length == 1) {  // SHOULD always be true, given query above
+            foundLectures[i].dataValues['published'] = foundLectures[i].LectureForSections[0].published     // bring published attr up
+            delete foundLectures[i].dataValues.LectureForSections   // remove unneccesary LectureForSection object from response
+        }
+    }
+    return foundLectures
 }
 
 // add new section to course
@@ -53,7 +55,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
     const courseId = parseInt(req.params['course_id'])
 
     // make sure the user creating this section is the teacher for the course
-    const isTeacher = await checkIfTeacher(user.id, courseId)
+    const isTeacher = await enrollmentService.checkIfTeacher(user.id, courseId)
 
     if (req.body.number && isTeacher) {     // if course number was passed in, and user is teacher
         const sectionToInsert = {
@@ -98,7 +100,7 @@ router.get('/:course_id/sections', requireAuthentication, async function (req, r
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
 
-    const isTeacher = await checkIfTeacher(user.id, courseId)
+    const isTeacher = await enrollmentService.checkIfTeacher(user.id, courseId)
 
     if (isTeacher) {
         try {
@@ -111,12 +113,7 @@ router.get('/:course_id/sections', requireAuthentication, async function (req, r
             }
         }
         catch (e) {
-            if (e instanceof ValidationError) {
-                return res.status(400).send({error: serializeSequelizeErrors(e)})
-            }
-            else {
-                next(e)
-            }
+            next(e)
         }
     }
     else {
@@ -130,29 +127,29 @@ router.get('/:course_id/sections/:section_id', requireAuthentication, async func
     const courseId = parseInt(req.params['course_id'])
     const sectionId = parseInt(req.params['section_id'])
 
-    const isTeacher = await checkIfTeacher(user.id, courseId)
+    const isTeacher = await enrollmentService.checkIfTeacher(user.id, courseId)
     const respObj = {}  // will hold the full endpoint response at the end
 
     if (isTeacher) {
         try {
             const foundSection = await getSection(sectionId)
             if (foundSection != null) {     // if section was found for given id
-                respObj['section'] = foundSection
-                const relatedLectures = await getLecturesFromSection(sectionId)   // get lectures and append to response
-                respObj['lectures'] = relatedLectures
-                res.status(200).send(respObj)
+                if (foundSection.courseId == courseId) {
+                    respObj['section'] = foundSection
+                    const relatedLectures = await getLecturesFromSection(sectionId)   // get lectures and append to response
+                    respObj['lectures'] = relatedLectures
+                    res.status(200).send(respObj)
+                }
+                else {
+                    res.status(400).send({error: "This section does not belong to the given course"})
+                }
             }
             else {
                 res.status(404).send({error: "There is no section for the provided section id"})
             }
         }
         catch (e) {
-            if (e instanceof ValidationError) {
-                return res.status(400).send({error: serializeSequelizeErrors(e)})
-            }
-            else {
-                next(e)
-            }
+            next(e)
         }
     }
     else {
@@ -167,37 +164,42 @@ router.put('/:course_id/sections/:section_id', requireAuthentication, async func
     const sectionId = parseInt(req.params['section_id'])
     const newNumber = req.body.number
 
-    const isTeacher = await checkIfTeacher(user.id, courseId)
+    const isTeacher = await enrollmentService.checkIfTeacher(user.id, courseId)
     const foundSection = await getSection(sectionId)
 
     if (isTeacher) {
         if (foundSection != null) {
-            if (newNumber != null && newNumber != "") {   // number is the only field that can be updated, so enforce that it is present and valid
-                try {
-                    await db.Section.update(
-                        { number: newNumber },
-                        { where: { id: sectionId } }
-                    )
-                    res.status(200).send()
+            if (foundSection.courseId == courseId) {
+                if (newNumber != null && newNumber != "") {   // number is the only field that can be updated, so enforce that it is present and valid
+                    try {
+                        await db.Section.update(
+                            { number: newNumber },
+                            { where: { id: sectionId } }
+                        )
+                        res.status(200).send()
+                    }
+                    catch (e) {
+                        if (e instanceof UniqueConstraintError) {
+                            res.status(400).send({
+                                error: "A section in this course with this section number already exists"
+                            })
+                        }
+                        else if (e instanceof ValidationError) {
+                            res.status(400).send({error: serializeSequelizeErrors(e)})
+                        }
+                        else {
+                            next(e)
+                        }
+                    }
                 }
-                catch (e) {
-                    if (e instanceof UniqueConstraintError) {
-                        res.status(400).send({
-                            error: "A section in this course with this section number already exists"
-                        })
-                    }
-                    else if (e instanceof ValidationError) {
-                        res.status(400).send({error: serializeSequelizeErrors(e)})
-                    }
-                    else {
-                        next(e)
-                    }
+                else {  // user didn't enter a number
+                    res.status(400).send({
+                        error: "Must enter a valid number field. Number is the only field that can be updated"
+                    })
                 }
             }
-            else {  // user didn't enter a number
-                res.status(400).send({
-                    error: "Must enter a valid number field. Number is the only field that can be updated"
-                })
+            else {
+                res.status(400).send({error: "This section does not belong to the given course"})
             }
         }
         else {  // foundSection is null

@@ -137,16 +137,34 @@ describe('api/sections tests', () => {
     })
 
     describe('GET /courses/:course_id/sections/:section_id', () => {
-        it('should respond with 404 for getting a course with bad section id', async () => {
+        it('should respond with 404 for getting a section with bad section id', async () => {
             const resp = await request(app).get(`/courses/${course1.id}/sections/${-1}`).set('Authorization', `Bearer ${teacherToken}`)
 
             expect(resp.statusCode).toEqual(404)
         })
 
-        it('should respond with 403 for getting a course as a student', async () => {
+        it('should respond with 403 for getting a section as a student', async () => {
             const resp = await request(app).get(`/courses/${course1.id}/sections/${section1.id}`).set('Authorization', `Bearer ${studentToken}`)
 
             expect(resp.statusCode).toEqual(403)
+        })
+
+        it('should respond with 400 for getting a section that is not in this course', async () => {
+            // create temporary course, that will not hold any sections
+            const temp_course = await db.Course.create({
+                name: 'Temp Temp',
+                description: 'Temp Temp Temp'
+            })
+            // enroll a teacher for this course
+            await db.Enrollment.create({
+                role: "teacher",
+                courseId: temp_course.id,
+                userId: teacher.id
+            })
+
+            const resp = await request(app).get(`/courses/${temp_course.id}/sections/${section1.id}`).set('Authorization', `Bearer ${teacherToken}`)
+
+            expect(resp.statusCode).toEqual(400)
         })
 
         it('should respond with 200 for successfully getting a course with provided lecture', async () => {
@@ -158,7 +176,7 @@ describe('api/sections tests', () => {
                 courseId: course1.id
             })
             // associate lecture with section
-            await db.LectureForSection.create({
+            const relation = await db.LectureForSection.create({
                 lectureId: temp_lec.id,
                 sectionId: section1.id,
             })
@@ -172,6 +190,7 @@ describe('api/sections tests', () => {
             expect(resp.body.lectures.length).toEqual(1)
             expect(resp.body.lectures[0].id).toEqual(temp_lec.id)
             expect(resp.body.lectures[0].title).toEqual(temp_lec.title)
+            expect(resp.body.lectures[0].published).toEqual(relation.published)
         })
     })
 
@@ -222,6 +241,26 @@ describe('api/sections tests', () => {
             }).set('Authorization', `Bearer ${studentToken}`)  
             
             expect(resp.statusCode).toEqual(403)
+        })
+
+        it('should respond with 400 for updating a section that is not in this course', async () => {
+            // create temporary course, that will not hold any sections
+            const temp_course = await db.Course.create({
+                name: 'Temp Temp',
+                description: 'Temp Temp Temp'
+            })
+            // enroll a teacher for this course
+            await db.Enrollment.create({
+                role: "teacher",
+                courseId: temp_course.id,
+                userId: teacher.id
+            })
+
+            const resp = await request(app).put(`/courses/${temp_course.id}/sections/${sectionToUpdate.id}`).send({
+                number: 4
+            }).set('Authorization', `Bearer ${teacherToken}`)
+            
+            expect(resp.statusCode).toEqual(400)
         })
 
         it('should respond with 200 for successfully updating section', async () => {       
