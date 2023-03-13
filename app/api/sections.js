@@ -1,5 +1,4 @@
-const { Router } = require('express')
-const router = Router()
+const router = require('express').Router({ mergeParams: true })
 const db = require('../models/index')
 const { logger } = require('../../lib/logger')
 const sectionService = require('../services/section_service')
@@ -49,7 +48,7 @@ async function getLecturesFromSection(sectionId) {
 }
 
 // add new section to course
-router.post('/:course_id/sections', requireAuthentication, async function (req, res, next) {
+router.post('/', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
 
@@ -95,7 +94,7 @@ router.post('/:course_id/sections', requireAuthentication, async function (req, 
 })
 
 // get all sections within a course
-router.get('/:course_id/sections', requireAuthentication, async function (req, res, next) {
+router.get('/', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
 
@@ -121,7 +120,7 @@ router.get('/:course_id/sections', requireAuthentication, async function (req, r
 })
 
 // get a specific section, and lectures for that section
-router.get('/:course_id/sections/:section_id', requireAuthentication, async function (req, res, next) {
+router.get('/:section_id', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
     const sectionId = parseInt(req.params['section_id'])
@@ -157,7 +156,7 @@ router.get('/:course_id/sections/:section_id', requireAuthentication, async func
 })
 
 // update a specific section
-router.put('/:course_id/sections/:section_id', requireAuthentication, async function (req, res, next) {
+router.put('/:section_id', requireAuthentication, async function (req, res, next) {
     const user = await db.User.findByPk(req.payload.sub) // find user by ID, which is stored in sub
     const courseId = parseInt(req.params['course_id'])
     const sectionId = parseInt(req.params['section_id'])
