@@ -1,6 +1,5 @@
 const { Router } = require('express')
 const router = Router()
-
 const db = require('../models/index')
 const { logger } = require('../../lib/logger')
 const sectionService = require('../services/section_service')

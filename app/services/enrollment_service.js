@@ -33,3 +33,7 @@ exports.checkIfTeacher = async (userId, courseId) => {
         }
     })
 }
+
+exports.extractArrayEnrollmentFields = (enrollments) => {
+    return enrollments.map(enrollment => extractValidFields(enrollment, enrollmentInformationSchema))
+}
