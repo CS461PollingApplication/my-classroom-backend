@@ -31,7 +31,7 @@ async function getLecturesFromSection(sectionId) {
                 where: { id: sectionId },
                 required: true
             }],
-            attributes: ['published'],  // don't return any attributes from join (only lecture fields)
+            attributes: ['published'],  // return only published column from the join
             required: true
         }],
         attributes: { exclude: ['CourseId'] }   // exclude duplicate CourseId field from join
