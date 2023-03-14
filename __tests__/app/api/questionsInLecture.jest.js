@@ -164,6 +164,96 @@ describe('Test api/questionsInLecture', () => {
         })
     })
 
+    // note: only different type of test is response 200 (all other validation testing is the same here)
+    describe('PUT /courses/:course_id/lectures/:lecture_id/questions/:question_id', () => {        
+        it('should respond with 403 for getting a question as a student', async () => {
+            const resp = await request(app).put(`/courses/${course1.id}/lectures/${lecture1.id}/questions/${question1.id}`).set('Cookie', studentCookies).set('X-XSRF-TOKEN', studentXsrfCookie)
+
+            expect(resp.statusCode).toEqual(403)
+        })
+
+        it('should respond with 400 for updating a question in lecture that is not in this course', async () => {
+            // create course to put new lecture in (will not be calling api using this course)
+            const randomCourse = await db.Course.create({
+                name: 'Random Course',
+                description: 'rando'
+            })
+            const lecNotInCourse = await db.Lecture.create({
+                title: 'not in course',
+                order: 1,
+                description: 'abc',
+                courseId: randomCourse.id
+            })
+            // put question1 in this lecture (to not trigger any other error)
+            await db.QuestionInLecture.create({
+                questionId: question1.id,
+                lectureId: lecNotInCourse.id,
+                published: true
+            })
+
+            // call GET using course1 and lecNotInCourse
+            const resp = await request(app).put(`/courses/${course1.id}/lectures/${lecNotInCourse.id}/questions/${question1.id}`).set('Cookie', teachCookies).set('X-XSRF-TOKEN', teachXsrfCookie)
+
+            expect(resp.statusCode).toEqual(400)
+        })
+
+        it('should respond with 400 for updating a question not in a lecture', async () => {
+            qsNotInLec = await db.Question.create({
+                courseId: course1.id,   // in course1, but just not in lecture1
+                type: "multiple choice",
+                stem: "was this in lecture",
+            })            
+            const resp = await request(app).put(`/courses/${course1.id}/lectures/${lecture1.id}/questions/${qsNotInLec.id}`).set('Cookie', teachCookies).set('X-XSRF-TOKEN', teachXsrfCookie)
+
+            expect(resp.statusCode).toEqual(400)
+        })
+
+        it('should respond with 404 for updating a question that does not exist in this course', async () => {
+            const tempCourse = await db.Course.create({
+                name: 'Temp Course',
+                description: 'tamp'
+            })
+            // create question that is not in course1
+            const qsNotInCourse = await db.Question.create({
+                courseId: tempCourse.id,
+                type: "multiple choice",
+                stem: "was this in the course",
+            })
+            // put qsNotInCourse in this lecture1 (to not trigger any other error)
+            await db.QuestionInLecture.create({
+                questionId: qsNotInCourse.id,
+                lectureId: lecture1.id,
+                published: true
+            })
+
+            const resp = await request(app).put(`/courses/${course1.id}/lectures/${lecture1.id}/questions/${qsNotInCourse.id}`).set('Cookie', teachCookies).set('X-XSRF-TOKEN', teachXsrfCookie)
+
+            expect(resp.statusCode).toEqual(404)
+        })
+
+        it('should respond with 200 for successfully updating the published status of a question', async () => {        
+            const initialPublishedStatus = q1_lec1.published
+            
+            let resp = await request(app).put(`/courses/${course1.id}/lectures/${lecture1.id}/questions/${question1.id}`).set('Cookie', teachCookies).set('X-XSRF-TOKEN', teachXsrfCookie)
+            expect(resp.statusCode).toEqual(200)
+
+            // get from database to see if it was updated
+            let check_relation = await db.QuestionInLecture.findOne({
+                where: { id: q1_lec1.id }
+            })
+            expect(check_relation.published).toEqual(!(initialPublishedStatus)) // should be opposite of initial published status
+
+            // call again to ensure the published status goes back to original
+            resp = await request(app).put(`/courses/${course1.id}/lectures/${lecture1.id}/questions/${question1.id}`).set('Cookie', teachCookies).set('X-XSRF-TOKEN', teachXsrfCookie)
+            expect(resp.statusCode).toEqual(200)
+
+            check_relation = await db.QuestionInLecture.findOne({
+                where: { id: q1_lec1.id }
+            })
+            expect(check_relation.published).toEqual(initialPublishedStatus)    // should have gone back or original status
+        })
+    })
+
     afterAll(async () => {
         await teacher.destroy()
         await student.destroy()
@@ -173,5 +263,6 @@ describe('Test api/questionsInLecture', () => {
         await teachEnroll.destroy()
         await lecture1.destroy()
         await question1.destroy()
+        await q1_lec1.destroy()
     })
 })
