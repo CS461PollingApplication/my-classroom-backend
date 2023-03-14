@@ -238,18 +238,14 @@ describe('Test api/questionsInLecture', () => {
             expect(resp.statusCode).toEqual(200)
 
             // get from database to see if it was updated
-            let check_relation = await db.QuestionInLecture.findOne({
-                where: { id: q1_lec1.id }
-            })
+            let check_relation = await db.QuestionInLecture.findByPk(q1_lec1.id)
             expect(check_relation.published).toEqual(!(initialPublishedStatus)) // should be opposite of initial published status
 
             // call again to ensure the published status goes back to original
             resp = await request(app).put(`/courses/${course1.id}/lectures/${lecture1.id}/questions/${question1.id}`).set('Cookie', teachCookies).set('X-XSRF-TOKEN', teachXsrfCookie)
             expect(resp.statusCode).toEqual(200)
 
-            check_relation = await db.QuestionInLecture.findOne({
-                where: { id: q1_lec1.id }
-            })
+            check_relation = await db.QuestionInLecture.findByPk(q1_lec1.id)
             expect(check_relation.published).toEqual(initialPublishedStatus)    // should have gone back or original status
         })
     })
