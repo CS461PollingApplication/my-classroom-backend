@@ -1,4 +1,5 @@
 const { extractValidFields, validateAgainstSchema } = require('../../lib/validator')
+const db = require('../models/index')
 
 const lectureInsertSchema = {
     courseId: {required: true},

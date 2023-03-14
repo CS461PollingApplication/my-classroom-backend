@@ -10,6 +10,7 @@
 */
 
 const { extractValidFields, validateAgainstSchema } = require('../../lib/validator')
+const db = require('../models/index')
 
 const questionInformationSchema = {
     id: {required: true},

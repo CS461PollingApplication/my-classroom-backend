@@ -16,13 +16,13 @@ router.get('/:question_id', requireAuthentication, async function (req, res, nex
 
     try {
         //check if the user is a teacher
-        const isTeacher = enrollmentService.checkIfTeacher(user.id, courseId)
+        const isTeacher = await enrollmentService.checkIfTeacher(user.id, courseId)
         if (isTeacher) {
-            const isLecInCourse = lectureService.getLectureInCourse(lectureId, courseId)
+            const isLecInCourse = await lectureService.getLectureInCourse(lectureId, courseId)
             if (isLecInCourse) {
-                const questionInLecture = questionService.getQuestionInLecture(questionId, lectureId)
+                const questionInLecture = await questionService.getQuestionInLecture(questionId, lectureId)
                 if (questionInLecture) {
-                    const question = questionService.getQuestionInCourse(questionId, courseId)
+                    const question = await questionService.getQuestionInCourse(questionId, courseId)
                     if (question) {
                         const respObj = {   // create response with question info and lecture-relationship info
                             ...questionService.extractQuestionFields(question),
