@@ -190,11 +190,11 @@ describe('/questions endpoints', () => {
         expect(resp.body.questions[1].stem).toEqual('What is the capital of Oregon?')
         expect(resp.body.questions[1].content.options).toEqual({0: "Portland", 1: "Corvallis", 2: "Bend", 3: "Salem"})
         expect(resp.body.questions[1].answers).toEqual({ 0: false, 1: false, 2: false, 3: true })
-        expect(resp.body.nextPage).toEqual(1)
-        expect(resp.body.prevPage).toBeUndefined()
+        expect(resp.body.links.nextPage).toEqual(`/courses/${course.id}/questions?string=&page=1&perPage=2`)
+        expect(resp.body.links.prevPage).toEqual("")
     })
 
-    // note: pagesare indexed like an array, starting at 0
+    // note: pages are indexed like an array, starting at 0
     it('should respond with 200 when a teacher gets page 2 of the questions for a course', async () => {
         const resp = await request(app).get(`/courses/${course.id}/questions?page=2&perPage=2`).set('Cookie', userCookies).set('X-XSRF-TOKEN', userXsrfCookie)
         expect(resp.statusCode).toEqual(200)
@@ -204,8 +204,8 @@ describe('/questions endpoints', () => {
         expect(resp.body.questions[0].stem).toEqual('What is 3 + 5?')
         expect(resp.body.questions[0].content.options).toEqual({ 0: 6, 1: 7, 2: 8, 3: 9 })
         expect(resp.body.questions[0].answers).toEqual({ 0: false, 1: false, 2: true, 3: false })
-        expect(resp.body.nextPage).toBeUndefined
-        expect(resp.body.prevPage).toEqual(1)
+        expect(resp.body.links.nextPage).toEqual("")
+        expect(resp.body.links.prevPage).toEqual(`/courses/${course.id}/questions?string=&page=1&perPage=2`)
     })
 
     it('should respond with 200 when a teacher gets the questions for a course filtered by a search parameter', async () => {
@@ -222,13 +222,14 @@ describe('/questions endpoints', () => {
         expect(resp.body.questions[1].stem).toEqual('What is 3 + 5?')
         expect(resp.body.questions[1].content.options).toEqual({0: 6, 1: 7, 2: 8, 3: 9})
         expect(resp.body.questions[1].answers).toEqual({ 0: false, 1: false, 2: true, 3: false })
-        expect(resp.body.nextPage).toBeUndefined()
-        expect(resp.body.prevPage).toBeUndefined()
     })
 
-    it('should respond with 400 when query string parameters are left out', async () => {
+    it('should respond with 200 when query string parameters are left out and should get first 25 questions by default', async () => {
         const resp = await request(app).get(`/courses/${course.id}/questions`).set('Cookie', userCookies).set('X-XSRF-TOKEN', userXsrfCookie)
-        expect(resp.statusCode).toEqual(400)
+        expect(resp.statusCode).toEqual(200)
+        expect(resp.body.questions.length).toEqual(5)
+        expect(resp.body.links.nextPage).toEqual("")
+        expect(resp.body.links.prevPage).toEqual("")
     })
 
     it('should respond with 400 when page number is out of bounds', async () => {

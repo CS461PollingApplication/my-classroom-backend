@@ -23,65 +23,49 @@ router.get('/', requireAuthentication, async function (req, res, next) {
         // we want search to have a value even if it is left out of the url
         const search = (req.query.search != null) ? req.query.search : ""
         // page and perPage are required query string parameters
-        const page = (req.query.page != null) ? parseInt(req.query.page) : null
-        const perPage = (req.query.perPage != null) ? parseInt(req.query.perPage) : null
-        if (page != null && perPage != null) {
-            try {
-                // get the questions needed
-                const questions = await db.Question.findAll({
-                    limit: perPage,
-                    offset: page * perPage,
-                    where: {
-                        stem: {
-                            [Op.like]: '%' + search + '%'
-                        },
-                        courseId: courseId
-                    }
-                })
-                // get the total questions for the course so that page number calculations can be made
-                const totalQuestions = await db.Question.findAll({
-                    where: {
-                        stem: {
-                            [Op.like]: '%' + search + '%'
-                        },
-                        courseId: courseId
-                    }
-                })
-                if (page * perPage < totalQuestions.length) {
-                    const pageCount = Math.ceil(totalQuestions.length / perPage) - 1;
-                    const nextPage = (page + 1 <= pageCount) ? page + 1 : null // dont let users go past the max page count
-                    const prevPage = (page - 1 >= 0) ? page - 1 : null
-                    // can use the response on the frontend to determine if there are more pages that can be reached forwards/backwards
-                    if (nextPage && prevPage) {
-                        res.status(200).send({
-                            questions: questionService.extractArrayQuestionFields(questions),
-                            nextPage: nextPage,
-                            prevPage: prevPage
-                        })
-                    } else if (nextPage) {
-                        res.status(200).send({
-                            questions: questionService.extractArrayQuestionFields(questions),
-                            nextPage: nextPage
-                        })
-                    } else if (prevPage) {
-                        res.status(200).send({
-                            questions: questionService.extractArrayQuestionFields(questions),
-                            prevPage: prevPage
-                        })
-                    } else {
-                        res.status(200).send({
-                            questions: questionService.extractArrayQuestionFields(questions)
-                        })
-                    }
-                } else {
-                    res.status(400).send({error: `page number given is out of bounds, there are not that many courses`})
+        const page = (req.query.page != null) ? parseInt(req.query.page) : 0
+        const perPage = (req.query.perPage != null) ? parseInt(req.query.perPage) : 25
+        try {
+            // get the questions needed
+            const questions = await db.Question.findAll({
+                limit: perPage,
+                offset: page * perPage,
+                where: {
+                    stem: {
+                        [Op.like]: '%' + search + '%'
+                    },
+                    courseId: courseId
                 }
-                
-            } catch (e) {
-                next(e) // catch anything weird that might happen
+            })
+            // get the total questions for the course so that page number calculations can be made
+            const totalQuestions = await db.Question.findAll({
+                where: {
+                    stem: {
+                        [Op.like]: '%' + search + '%'
+                    },
+                    courseId: courseId
+                }
+            })
+            if (page * perPage < totalQuestions.length) {
+                const maxPageIndex = Math.ceil(totalQuestions.length / perPage) - 1;
+                const nextPage = (page + 1 <= maxPageIndex) ? page + 1 : null // dont let users go past the max page count
+                const prevPage = (page - 1 >= 0) ? page - 1 : null
+                const nextPageUrl = (nextPage != null) ? req.originalUrl.substring(0, req.originalUrl.indexOf("?")) + `?string=${search}&page=${nextPage}&perPage=${perPage}` : ""
+                const prevPageUrl = (prevPage != null) ? req.originalUrl.substring(0, req.originalUrl.indexOf("?")) + `?string=${search}&page=${prevPage}&perPage=${perPage}` : ""
+                // can use the response on the frontend to determine if there are more pages that can be reached forwards/backwards
+                res.status(200).send({
+                    questions: questionService.extractArrayQuestionFields(questions),
+                    links: {
+                        nextPage: nextPageUrl,
+                        prevPage: prevPageUrl
+                    }
+                })
+            } else {
+                res.status(400).send({error: `page number given is out of bounds, there are not that many courses`})
             }
-        } else {
-            res.status(400).send({error: `page and perPage are required query string parameters`})
+            
+        } catch (e) {
+            next(e) // catch anything weird that might happen
         }
         
     } else {
@@ -108,7 +92,7 @@ router.post('/', requireAuthentication, async function (req, res, next) {
         const missingRequestFields = questionService.validateQuestionCreationRequest(questionToInsert)
         if (missingRequestFields.length == 0) {
             try {
-                const question = await db.Question.create(questionService.extractQuestionFields(questionToInsert))
+                const question = await db.Question.create(questionService.extractQuestionUpdateFields(questionToInsert))
                 res.status(201).send({
                     question: questionService.extractQuestionFields(question)
                 })
