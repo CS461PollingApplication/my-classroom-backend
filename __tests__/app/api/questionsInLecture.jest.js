@@ -11,6 +11,7 @@ describe('Test api/questionsInLecture', () => {
     let section1
     let lecture1
     let question1
+    let question2
     let q1_lec1
 
     beforeAll(async() => {
@@ -68,6 +69,12 @@ describe('Test api/questionsInLecture', () => {
             questionId: question1.id,
             lectureId: lecture1.id,
             published: true
+        })
+
+        question2 = await db.Question.create({
+            courseId: course1.id,
+            type: "multiple choice",
+            stem: "not initially linked to lecture",
         })
 
         teachEnroll = await db.Enrollment.create({
@@ -250,6 +257,16 @@ describe('Test api/questionsInLecture', () => {
         })
     })
 
+    describe('POST /courses/:course_id/lectures/:lecture_id/questions/:question_id', () => {        
+        it('should respond with 201 for linking question to lecture', async () => {                    
+            let resp = await request(app).post(`/courses/${course1.id}/lectures/${lecture1.id}/questions/${question2.id}`).set('Cookie', teachCookies).set('X-XSRF-TOKEN', teachXsrfCookie)
+            
+            expect(resp.statusCode).toEqual(201)
+            expect(resp.body.questionId).toEqual(question2.id)
+            
+        })
+    })
+
     afterAll(async () => {
         await teacher.destroy()
         await student.destroy()
@@ -259,6 +276,7 @@ describe('Test api/questionsInLecture', () => {
         await teachEnroll.destroy()
         await lecture1.destroy()
         await question1.destroy()
+        await question2.destroy()
         await q1_lec1.destroy()
     })
 })
