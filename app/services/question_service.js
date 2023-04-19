@@ -53,7 +53,7 @@ const completeQuestionInLectureInformationSchema = {
     questionId: {required: true},
     lectureId: {required: true},
     order: {required: false},
-    published: {required: true}
+    published: {required: false}
 }
 
 exports.validateQuestionInLectureCreationRequest = (body) => {

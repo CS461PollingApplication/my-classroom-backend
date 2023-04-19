@@ -106,6 +106,7 @@ router.post('/:question_id', requireAuthentication, async function (req, res, ne
     try {
         //check if the user is a teacher
         const isTeacher = await enrollmentService.checkIfTeacher(user.id, courseId)
+        console.log(isTeacher)
         if (isTeacher) {
             const isLecInCourse = await lectureService.getLectureInCourse(lectureId, courseId)
             if (isLecInCourse) {
@@ -119,17 +120,8 @@ router.post('/:question_id', requireAuthentication, async function (req, res, ne
 
                         const missingFields = questionService.validateQuestionInLectureCreationRequest(newQsLecRelation)
                         if (missingFields.length == 0) {
-                            const relationToInsert = {
-                                questionId: questionId,
-                                lectureId: lectureId,
-                                
-                            }
-                            
-                            await db.QuestionInLecture.create({
-                                questionId: questionId,
-                                lectureId: lectureId
-                            })
-                            res.status(201).send(questionService.extractCompleteQuestionInLectureFields(questionInLecture))
+                            await db.QuestionInLecture.create(newQsLecRelation)
+                            res.status(201).send(questionService.extractCompleteQuestionInLectureFields(newQsLecRelation))
                         }
                         else {
                             return res.status(400).send({error: `Missing required fields: ${missingFields}`})                        
