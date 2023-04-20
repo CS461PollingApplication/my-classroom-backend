@@ -124,7 +124,7 @@ router.put('/:response_id', requireAuthentication, async function (req, res, nex
             } else {
                 // maybe better to have a different status code if it belongs to another user
                 // the thought here is that if it does belong to another user it would be better to not explicitly tell an attacker that
-                res.status(404).send({ error: 'response with given id either not found or belongs to another user' })
+                res.status(404).send({ error: 'response with given id not found' })
             }
         } else {
             res.status(400).send({error: `Submission must be present and must contain at least two options`})
