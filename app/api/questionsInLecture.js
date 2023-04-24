@@ -106,7 +106,6 @@ router.post('/:question_id', requireAuthentication, async function (req, res, ne
     try {
         //check if the user is a teacher
         const isTeacher = await enrollmentService.checkIfTeacher(user.id, courseId)
-        console.log(isTeacher)
         if (isTeacher) {
             const isLecInCourse = await lectureService.getLectureInCourse(lectureId, courseId)
             if (isLecInCourse) {
