@@ -147,4 +147,6 @@ router.post('/:question_id', requireAuthentication, async function (req, res, ne
     }
 })
 
+router.use('/:question_id/responses', require('./responses'))
+
 module.exports = router
