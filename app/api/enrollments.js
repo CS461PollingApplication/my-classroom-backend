@@ -1,7 +1,6 @@
 const router = require('express').Router({ mergeParams: true })
 const db = require('../models/index')
 const enrollmentService = require('../services/enrollment_service')
-const userService = require('../services/user_service.js')
 const { requireAuthentication } = require('../../lib/auth')
 const { logger } = require('../../lib/logger')
 
